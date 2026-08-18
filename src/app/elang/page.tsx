@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { Select } from '@/components/ui/Input'
+import { Input } from '@/components/ui/Input'
 import { cn, getDifficultyColor, getScoreColor } from '@/lib/utils'
 import {
   Search,
@@ -15,28 +15,30 @@ import {
   AlertCircle,
   Globe,
   Zap,
+  FileText,
+  TrendingUp,
+  Save,
+  Sparkles,
 } from 'lucide-react'
 import { TrendingProduct } from '@/lib/types'
 import { supabase } from '@/lib/supabase/client'
 
-const niches = [
-  { value: 'rumah-tangga', label: '🏠 Rumah Tangga' },
-  { value: 'fashion', label: '👗 Fashion' },
-  { value: 'gadget', label: '📱 Gadget' },
-  { value: 'kecantikan', label: '💄 Kecantikan' },
-  { value: 'ibu-bayi', label: '👶 Ibu & Bayi' },
-  { value: 'makanan', label: '🍕 Makanan' },
-]
-
-// Real steps that actually happen
-const searchSteps = [
-  { id: 'browse', label: '🌐 Browsing internet untuk data real-time', icon: Globe },
-  { id: 'analyze', label: '🧠 Menganalisis trending products', icon: Zap },
-  { id: 'compile', label: '📋 Menyusun hasil riset', icon: Search },
+// Popular search suggestions
+const suggestions = [
+  'kacamata vintage',
+  'tas wanita import',
+  'skincare Korea',
+  'gadget murah',
+  'sepatu running',
+  'perlengkapan bayi',
+  'dress wanita',
+  'smartwatch fitness',
+  'sprei motif',
+  'tumbler minuman',
 ]
 
 export default function ElangPage() {
-  const [selectedNiche, setSelectedNiche] = useState('rumah-tangga')
+  const [searchQuery, setSearchQuery] = useState('')
   const [maxProducts, setMaxProducts] = useState(10)
   const [isSearching, setIsSearching] = useState(false)
   const [searchProgress, setSearchProgress] = useState(0)
@@ -49,6 +51,7 @@ export default function ElangPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [savedCount, setSavedCount] = useState(0)
   const [user, setUser] = useState<any>(null)
+  const [showSuggestions, setShowSuggestions] = useState(false)
 
   // Get current user
   useEffect(() => {
@@ -57,7 +60,14 @@ export default function ElangPage() {
     })
   }, [])
 
+  // Filter suggestions based on input
+  const filteredSuggestions = suggestions.filter(s =>
+    s.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
   const handleSearch = async () => {
+    if (!searchQuery.trim()) return
+
     setIsSearching(true)
     setSearchProgress(0)
     setCompletedSteps([])
@@ -65,18 +75,17 @@ export default function ElangPage() {
     setResults([])
     setError(null)
     setSelectedProducts([])
+    setShowSuggestions(false)
 
     // Realistic progress based on actual steps
-    const stepProgress = [30, 60, 90] // Each step adds progress
+    const stepProgress = [30, 60, 90]
     let stepIndex = 0
 
-    // Simulate step progression
     const progressInterval = setInterval(() => {
       setSearchProgress(prev => {
         if (stepIndex < stepProgress.length) {
           const target = stepProgress[stepIndex]
           if (prev >= target) {
-            // Move to next step
             if (stepIndex < searchSteps.length - 1) {
               stepIndex++
               setCompletedSteps(prev => [...prev, searchSteps[stepIndex - 1].id])
@@ -88,7 +97,6 @@ export default function ElangPage() {
       })
     }, 200)
 
-    // Retry logic
     let attempts = 0
     const maxAttempts = 3
 
@@ -113,7 +121,7 @@ export default function ElangPage() {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              niche: selectedNiche,
+              niche: searchQuery.trim(),
               maxProducts,
             }),
           })
@@ -130,7 +138,6 @@ export default function ElangPage() {
             throw new Error(data.error || 'Failed to research products')
           }
 
-          // Complete all steps
           setCompletedSteps(searchSteps.map(s => s.id))
           setCurrentStep(null)
           setSearchProgress(100)
@@ -205,16 +212,9 @@ export default function ElangPage() {
     }
   }
 
-  const getPlatformIcon = (platform: string) => {
-    switch (platform.toLowerCase()) {
-      case 'tiktok':
-        return '🎵'
-      case 'instagram':
-        return '📸'
-      case 'youtube':
-        return '▶️'
-      default:
-        return '📱'
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !isSearching && searchQuery.trim()) {
+      handleSearch()
     }
   }
 
@@ -223,8 +223,8 @@ export default function ElangPage() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-4 mb-4">
-          <div className="w-16 h-16 bg-gradient-to-br from-sky-400 to-sky-600 rounded-2xl flex items-center justify-center text-4xl shadow-lg">
-            🦅
+          <div className="w-16 h-16 bg-gradient-to-br from-sky-400 to-sky-600 rounded-2xl flex items-center justify-center shadow-lg">
+            <Search className="w-8 h-8 text-white" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Elang</h1>
@@ -232,9 +232,9 @@ export default function ElangPage() {
           </div>
         </div>
         <div className="bg-sky-50 border border-sky-200 rounded-xl p-4">
-          <p className="text-sky-800 text-sm italic">
-            "Elang punya penglihatan super tajam. Dari ribuan meter高空, dia bisa melihat produk
-            trending yang akan explode sebelum orang lain menyadarinya."
+          <p className="text-sky-800 text-sm">
+            Elang memiliki penglihatan tajam untuk menemukan produk trending.
+            Cukup ketik kata kunci produk yang kamu cari, biarkan Elang yang menemukan yang paling laris!
           </p>
         </div>
       </div>
@@ -243,52 +243,126 @@ export default function ElangPage() {
       <Card className="mb-6">
         <CardHeader>
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <Search className="w-5 h-5 text-sky-600" />
-            Cari Produk Trending
+            <TrendingUp className="w-5 h-5 text-sky-600" />
+            Riset Produk Trending
           </h2>
           <p className="text-sm text-gray-500">
-            Elang akan browsing internet untuk menemukan produk trending real-time
+            Ketik kata kunci produk yang ingin kamu riset. Elang akan browsing internet untuk menemukan produk trending
           </p>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <Select
-              label="Niche"
-              options={niches}
-              value={selectedNiche}
-              onChange={(e) => setSelectedNiche(e.target.value)}
-            />
-            <Select
-              label="Jumlah Produk"
-              options={[
-                { value: '5', label: '5 Produk' },
-                { value: '10', label: '10 Produk' },
-                { value: '15', label: '15 Produk' },
-                { value: '20', label: '20 Produk' },
-              ]}
-              value={maxProducts.toString()}
-              onChange={(e) => setMaxProducts(parseInt(e.target.value))}
-            />
-          </div>
+          <div className="space-y-4">
+            {/* Search Input */}
+            <div className="relative">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value)
+                    setShowSuggestions(true)
+                  }}
+                  onFocus={() => setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Ketik kata kunci produk, contoh: kacamata, tas wanita, skincare..."
+                  className="w-full pl-12 pr-4 py-4 text-lg border-2 border-gray-200 rounded-xl focus:border-sky-500 focus:ring-4 focus:ring-sky-100 transition-all outline-none"
+                  disabled={isSearching}
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    disabled={isSearching}
+                  >
+                    <AlertCircle className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
 
-          <Button
-            onClick={handleSearch}
-            disabled={isSearching}
-            className="w-full md:w-auto bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700"
-            size="lg"
-          >
-            {isSearching ? (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Elang Sedang Berburu...
-              </>
-            ) : (
-              <>
-                <Search className="w-5 h-5 mr-2" />
-                🦅 Mulai Cari Produk Trending
-              </>
-            )}
-          </Button>
+              {/* Suggestions */}
+              {showSuggestions && searchQuery && filteredSuggestions.length > 0 && (
+                <div className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+                  {filteredSuggestions.map((suggestion, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setSearchQuery(suggestion)
+                        setShowSuggestions(false)
+                      }}
+                      className="w-full px-4 py-3 text-left hover:bg-sky-50 flex items-center gap-3 transition-colors"
+                    >
+                      <Sparkles className="w-4 h-4 text-sky-500" />
+                      <span className="text-gray-700">{suggestion}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Popular searches */}
+              {showSuggestions && !searchQuery && (
+                <div className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+                  <div className="px-4 py-2 bg-gray-50 border-b border-gray-100">
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                      Pencarian Populer
+                    </span>
+                  </div>
+                  {suggestions.map((suggestion, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setSearchQuery(suggestion)
+                        setShowSuggestions(false)
+                      }}
+                      className="w-full px-4 py-3 text-left hover:bg-sky-50 flex items-center gap-3 transition-colors"
+                    >
+                      <TrendingUp className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-700">{suggestion}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Options */}
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">Jumlah produk:</label>
+                <select
+                  value={maxProducts}
+                  onChange={(e) => setMaxProducts(parseInt(e.target.value))}
+                  className="px-3 py-2 border border-gray-200 rounded-lg focus:border-sky-500 outline-none"
+                  disabled={isSearching}
+                >
+                  <option value={5}>5 Produk</option>
+                  <option value={10}>10 Produk</option>
+                  <option value={15}>15 Produk</option>
+                  <option value={20}>20 Produk</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Search Button */}
+            <Button
+              onClick={handleSearch}
+              disabled={isSearching || !searchQuery.trim()}
+              className="w-full bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 disabled:opacity-50"
+              size="lg"
+            >
+              {isSearching ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Elang Sedang Berburu...
+                </>
+              ) : (
+                <>
+                  <Search className="w-5 h-5 mr-2" />
+                  Mulai Riset Produk
+                </>
+              )}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -297,7 +371,9 @@ export default function ElangPage() {
         <Card className="mb-6">
           <CardContent className="py-8">
             <div className="text-center mb-6">
-              <div className="text-6xl mb-4 animate-bounce">🦅</div>
+              <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-sky-400 to-sky-600 rounded-2xl flex items-center justify-center shadow-lg animate-pulse">
+                <Search className="w-10 h-10 text-white" />
+              </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
                 Elang Sedang Berburu...
               </h3>
@@ -312,7 +388,7 @@ export default function ElangPage() {
                 <div className="flex items-center gap-2 text-amber-700">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span className="text-sm font-medium">
-                    🔄 Retry attempt {retryCount + 1}/3 - Gemini sedang sibuk...
+                    Retry attempt {retryCount + 1}/3 - Gemini sedang sibuk...
                   </span>
                 </div>
               </div>
@@ -341,11 +417,17 @@ export default function ElangPage() {
                 return (
                   <div key={step.id} className="flex items-center gap-3 text-sm">
                     {isCompleted ? (
-                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      </div>
                     ) : isActive ? (
-                      <Icon className="w-5 h-5 text-sky-500 animate-pulse" />
+                      <div className="w-8 h-8 rounded-full bg-sky-100 flex items-center justify-center">
+                        <Icon className="w-5 h-5 text-sky-500 animate-pulse" />
+                      </div>
                     ) : (
-                      <div className="w-5 h-5 rounded-full border-2 border-gray-300" />
+                      <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                        <div className="w-2 h-2 rounded-full bg-gray-300" />
+                      </div>
                     )}
                     <span className={cn(
                       isCompleted && "text-green-600",
@@ -367,7 +449,9 @@ export default function ElangPage() {
         <Card className="mb-6 border-red-200 bg-red-50">
           <CardContent className="py-6">
             <div className="flex items-start gap-4">
-              <AlertCircle className="w-6 h-6 text-red-500 flex-shrink-0 mt-0.5" />
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <AlertCircle className="w-5 h-5 text-red-500" />
+              </div>
               <div>
                 <h3 className="font-semibold text-red-800 mb-1">Terjadi Kesalahan</h3>
                 <p className="text-red-600 text-sm">{error}</p>
@@ -390,7 +474,9 @@ export default function ElangPage() {
         <Card className="mb-6 border-green-200 bg-green-50">
           <CardContent className="py-4">
             <div className="flex items-center gap-4">
-              <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0" />
+              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                <CheckCircle2 className="w-5 h-5 text-green-500" />
+              </div>
               <div>
                 <h3 className="font-semibold text-green-800">Berhasil Disimpan!</h3>
                 <p className="text-green-600 text-sm">
@@ -408,7 +494,7 @@ export default function ElangPage() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-xl font-bold text-gray-900">
-                🎯 Ditemukan {results.length} Produk Trending!
+                Ditemukan {results.length} Produk Trending!
               </h2>
               <p className="text-gray-500 text-sm">
                 Pilih produk yang ingin kamu simpan ke database
@@ -428,7 +514,7 @@ export default function ElangPage() {
                 ) : (
                   <>
                     <Save className="w-4 h-4 mr-2" />
-                    💾 Simpan {selectedProducts.length} Produk
+                    Simpan {selectedProducts.length} Produk
                   </>
                 )}
               </Button>
@@ -456,21 +542,21 @@ export default function ElangPage() {
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
                         {isTop && (
-                          <div className="bg-gradient-to-r from-orange-400 to-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                            🏆 TOP {index + 1}
+                          <div className="bg-gradient-to-r from-orange-400 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                            TOP {index + 1}
                           </div>
                         )}
-                        <span className={cn(
-                          "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
+                        <div className={cn(
+                          "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
                           isSelected
                             ? "bg-green-500 border-green-500"
                             : "border-gray-300"
                         )}>
-                          {isSelected && <CheckCircle2 className="w-3 h-3 text-white" />}
-                        </span>
+                          {isSelected && <CheckCircle2 className="w-4 h-4 text-white" />}
+                        </div>
                       </div>
                       <Badge className={cn(getScoreColor(product.trendScore), "font-bold")}>
-                        ⭐ {product.trendScore}/100
+                        {product.trendScore}/100
                       </Badge>
                     </div>
 
@@ -482,8 +568,8 @@ export default function ElangPage() {
                     {/* Metrics */}
                     <div className="grid grid-cols-2 gap-3 mb-4">
                       <div className="flex items-center gap-2 text-sm">
-                        <div className="p-1.5 bg-green-100 rounded-lg">
-                          <DollarSign className="w-3.5 h-3.5 text-green-600" />
+                        <div className="p-2 bg-green-100 rounded-lg">
+                          <DollarSign className="w-4 h-4 text-green-600" />
                         </div>
                         <div>
                           <p className="text-gray-500 text-xs">Est. Komisi</p>
@@ -491,8 +577,8 @@ export default function ElangPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
-                        <div className="p-1.5 bg-sky-100 rounded-lg">
-                          <Eye className="w-3.5 h-3.5 text-sky-600" />
+                        <div className="p-2 bg-sky-100 rounded-lg">
+                          <Eye className="w-4 h-4 text-sky-600" />
                         </div>
                         <div>
                           <p className="text-gray-500 text-xs">Est. Views</p>
@@ -501,28 +587,18 @@ export default function ElangPage() {
                       </div>
                     </div>
 
-                    {/* Platforms */}
-                    <div className="flex items-center gap-2 mb-4">
-                      {product.platforms.map(platform => (
-                        <span key={platform} className="text-xl" title={platform}>
-                          {getPlatformIcon(platform)}
-                        </span>
-                      ))}
-                      <span className="text-xs text-gray-500 ml-1">
-                        {product.platforms.join(', ')}
-                      </span>
-                    </div>
-
                     {/* Why Trending */}
                     <div className="bg-gray-50 rounded-lg p-3 mb-4">
-                      <p className="text-xs text-gray-500 mb-1">📈 Kenapa Trending</p>
+                      <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                        <TrendingUp className="w-3 h-3" /> Kenapa Trending
+                      </p>
                       <p className="text-sm text-gray-700">{product.whyTrending}</p>
                     </div>
 
                     {/* Tags */}
                     <div className="flex flex-wrap gap-2">
                       <Badge className={getDifficultyColor(product.difficulty)}>
-                        ⚡ {product.difficulty}
+                        {product.difficulty}
                       </Badge>
                       {product.sellingPoints.slice(0, 3).map((point, i) => (
                         <Badge key={i} variant="default">
@@ -542,12 +618,14 @@ export default function ElangPage() {
       {!isSearching && results.length === 0 && !error && savedCount === 0 && (
         <Card>
           <CardContent className="py-12 text-center">
-            <div className="text-6xl mb-4">🦅</div>
+            <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-sky-100 to-sky-200 rounded-2xl flex items-center justify-center">
+              <Search className="w-10 h-10 text-sky-500" />
+            </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               Siap untuk Berburu?
             </h3>
             <p className="text-gray-500 max-w-md mx-auto">
-              Pilih niche dan klik tombol di atas untuk memulai riset produk trending bersama Elang
+              Ketik kata kunci produk yang ingin kamu riset. Elang akan menemukan produk trending untukmu!
             </p>
           </CardContent>
         </Card>
@@ -555,3 +633,10 @@ export default function ElangPage() {
     </div>
   )
 }
+
+// Real steps that actually happen
+const searchSteps = [
+  { id: 'browse', label: 'Browsing internet untuk data real-time', icon: Globe },
+  { id: 'analyze', label: 'Menganalisis trending products', icon: Zap },
+  { id: 'compile', label: 'Menyusun hasil riset', icon: FileText },
+]
