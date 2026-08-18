@@ -1,25 +1,24 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Select } from '@/components/ui/Input'
-import { cn, getDifficultyColor, getScoreColor, formatCurrency } from '@/lib/utils'
+import { cn, getDifficultyColor, getScoreColor } from '@/lib/utils'
 import {
   Search,
   TrendingUp,
   DollarSign,
   Eye,
-  Target,
-  Sparkles,
   CheckCircle2,
-  XCircle,
   Loader2,
   AlertCircle,
   ArrowRight,
+  Save,
 } from 'lucide-react'
 import { TrendingProduct } from '@/lib/types'
+import { supabase } from '@/lib/supabase/client'
 
 const niches = [
   { value: 'rumah-tangga', label: '🏠 Rumah Tangga' },
@@ -30,16 +29,8 @@ const niches = [
   { value: 'makanan', label: '🍕 Makanan' },
 ]
 
-const budgetRanges = [
-  { value: 'under-50k', label: 'Under Rp 50.000' },
-  { value: '50k-200k', label: 'Rp 50.000 - Rp 200.000' },
-  { value: '200k-500k', label: 'Rp 200.000 - Rp 500.000' },
-  { value: 'all', label: 'Semua Harga' },
-]
-
 export default function ElangPage() {
   const [selectedNiche, setSelectedNiche] = useState('rumah-tangga')
-  const [budgetRange, setBudgetRange] = useState('all')
   const [maxProducts, setMaxProducts] = useState(10)
   const [isSearching, setIsSearching] = useState(false)
   const [searchProgress, setSearchProgress] = useState(0)
@@ -47,6 +38,16 @@ export default function ElangPage() {
   const [results, setResults] = useState<TrendingProduct[]>([])
   const [selectedProducts, setSelectedProducts] = useState<TrendingProduct[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const [savedCount, setSavedCount] = useState(0)
+  const [user, setUser] = useState<any>(null)
+
+  // Get current user
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user)
+    })
+  }, [])
 
   const handleSearch = async () => {
     setIsSearching(true)
@@ -114,6 +115,43 @@ export default function ElangPage() {
     })
   }
 
+  const handleSaveSelectedProducts = async () => {
+    if (!user || selectedProducts.length === 0) return
+
+    setIsSaving(true)
+    try {
+      const response = await fetch('/api/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          products: selectedProducts,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to save products')
+      }
+
+      setSavedCount(data.count)
+
+      // Reset after save
+      setTimeout(() => {
+        setSavedCount(0)
+        setSelectedProducts([])
+        setResults([])
+      }, 3000)
+    } catch (err: any) {
+      setError(err.message || 'Failed to save products')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   const getPlatformIcon = (platform: string) => {
     switch (platform.toLowerCase()) {
       case 'tiktok':
@@ -160,18 +198,12 @@ export default function ElangPage() {
           </p>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <Select
               label="Niche"
               options={niches}
               value={selectedNiche}
               onChange={(e) => setSelectedNiche(e.target.value)}
-            />
-            <Select
-              label="Budget Produk"
-              options={budgetRanges}
-              value={budgetRange}
-              onChange={(e) => setBudgetRange(e.target.value)}
             />
             <Select
               label="Jumlah Produk"
@@ -286,6 +318,23 @@ export default function ElangPage() {
         </Card>
       )}
 
+      {/* Success Save */}
+      {savedCount > 0 && (
+        <Card className="mb-6 border-green-200 bg-green-50">
+          <CardContent className="py-4">
+            <div className="flex items-center gap-4">
+              <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0" />
+              <div>
+                <h3 className="font-semibold text-green-800">Berhasil Disimpan!</h3>
+                <p className="text-green-600 text-sm">
+                  {savedCount} produk berhasil disimpan ke database
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Results */}
       {results.length > 0 && (
         <>
@@ -295,13 +344,26 @@ export default function ElangPage() {
                 🎯 Ditemukan {results.length} Produk Trending!
               </h2>
               <p className="text-gray-500 text-sm">
-                Urutkan dan pilih produk yang ingin kamu promosikan
+                Pilih produk yang ingin kamu simpan ke database
               </p>
             </div>
             {selectedProducts.length > 0 && (
-              <Button className="bg-gradient-to-r from-orange-500 to-orange-600">
-                ✅ Pilih {selectedProducts.length} Produk
-                <ArrowRight className="w-4 h-4 ml-2" />
+              <Button
+                onClick={handleSaveSelectedProducts}
+                disabled={isSaving || !user}
+                className="bg-gradient-to-r from-green-500 to-green-600"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Menyimpan...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    💾 Simpan {selectedProducts.length} Produk
+                  </>
+                )}
               </Button>
             )}
           </div>
@@ -317,7 +379,7 @@ export default function ElangPage() {
                   key={product.name}
                   className={cn(
                     "transition-all cursor-pointer hover:shadow-md",
-                    isSelected && "ring-2 ring-orange-500 bg-orange-50/50",
+                    isSelected && "ring-2 ring-green-500 bg-green-50/50",
                     isTop && "border-orange-200"
                   )}
                   onClick={() => toggleProductSelection(product)}
@@ -334,7 +396,7 @@ export default function ElangPage() {
                         <span className={cn(
                           "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
                           isSelected
-                            ? "bg-orange-500 border-orange-500"
+                            ? "bg-green-500 border-green-500"
                             : "border-gray-300"
                         )}>
                           {isSelected && <CheckCircle2 className="w-3 h-3 text-white" />}
@@ -406,34 +468,11 @@ export default function ElangPage() {
               )
             })}
           </div>
-
-          {/* Selected Products Summary */}
-          {selectedProducts.length > 0 && (
-            <Card className="mt-6 bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                      <Sparkles className="w-5 h-5 text-orange-500" />
-                      Produk Dipilih untuk Dibuatkan Konten
-                    </h3>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {selectedProducts.length} produk siap diproses oleh Merak
-                    </p>
-                  </div>
-                  <Button className="bg-gradient-to-r from-orange-500 to-orange-600">
-                    Lanjut ke Merak 🦚
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </>
       )}
 
       {/* Empty State */}
-      {!isSearching && results.length === 0 && !error && (
+      {!isSearching && results.length === 0 && !error && savedCount === 0 && (
         <Card>
           <CardContent className="py-12 text-center">
             <div className="text-6xl mb-4">🦅</div>
