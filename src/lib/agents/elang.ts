@@ -81,7 +81,10 @@ PENTING:
 - Produk harus punya POTENSIAL VISUAL yang bagus untuk konten`
 
   try {
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + process.env.NEXT_PUBLIC_GEMINI_API_KEY, {
+    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY
+    const model = 'gemini-3.6-flash'
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -100,6 +103,11 @@ PENTING:
     })
 
     const data = await response.json()
+
+    if (!response.ok) {
+      console.error('Gemini API error:', data)
+      throw new Error(data.error?.message || 'Failed to call Gemini API')
+    }
 
     if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
       throw new Error('Invalid response from Gemini')
