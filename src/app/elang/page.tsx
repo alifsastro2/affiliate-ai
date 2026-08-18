@@ -66,8 +66,6 @@ export default function ElangPage() {
   )
 
   const handleSearch = async () => {
-    if (!searchQuery.trim()) return
-
     setIsSearching(true)
     setSearchProgress(0)
     setCompletedSteps([])
@@ -76,6 +74,9 @@ export default function ElangPage() {
     setError(null)
     setSelectedProducts([])
     setShowSuggestions(false)
+
+    // Determine search query - if empty, search for all trending
+    const query = searchQuery.trim() || 'semua produk trending di Indonesia'
 
     // Realistic progress based on actual steps
     const stepProgress = [30, 60, 90]
@@ -121,7 +122,7 @@ export default function ElangPage() {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              niche: searchQuery.trim(),
+              niche: query,
               maxProducts,
             }),
           })
@@ -266,7 +267,7 @@ export default function ElangPage() {
                   onFocus={() => setShowSuggestions(true)}
                   onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                   onKeyPress={handleKeyPress}
-                  placeholder="Ketik kata kunci produk, contoh: kacamata, tas wanita, skincare..."
+                  placeholder="Ketik kata kunci atau kosongkan untuk cari semua produk trending..."
                   className="w-full pl-12 pr-4 py-4 text-lg border-2 border-gray-200 rounded-xl focus:border-sky-500 focus:ring-4 focus:ring-sky-100 transition-all outline-none"
                   disabled={isSearching}
                 />
@@ -346,7 +347,7 @@ export default function ElangPage() {
             {/* Search Button */}
             <Button
               onClick={handleSearch}
-              disabled={isSearching || !searchQuery.trim()}
+              disabled={isSearching}
               className="w-full bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 disabled:opacity-50"
               size="lg"
             >
@@ -358,7 +359,7 @@ export default function ElangPage() {
               ) : (
                 <>
                   <Search className="w-5 h-5 mr-2" />
-                  Mulai Riset Produk
+                  {searchQuery.trim() ? 'Mulai Riset Produk' : 'Cari Semua Produk Trending'}
                 </>
               )}
             </Button>
