@@ -38,6 +38,7 @@ export default function ElangPage() {
   const [results, setResults] = useState<TrendingProduct[]>([])
   const [selectedProducts, setSelectedProducts] = useState<TrendingProduct[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [retryCount, setRetryCount] = useState(0)
   const [isSaving, setIsSaving] = useState(false)
   const [savedCount, setSavedCount] = useState(0)
   const [user, setUser] = useState<any>(null)
@@ -57,9 +58,16 @@ export default function ElangPage() {
     setError(null)
     setSelectedProducts([])
 
-    // Simulate progress
+    // Simulate progress with retry awareness
+    let actualProgress = 0
     const progressInterval = setInterval(() => {
-      setSearchProgress(prev => Math.min(prev + Math.random() * 15, 95))
+      if (retryCount > 0) {
+        // Show retry progress
+        actualProgress = Math.min(actualProgress + Math.random() * 10, 80)
+      } else {
+        actualProgress = Math.min(actualProgress + Math.random() * 15, 90)
+      }
+      setSearchProgress(prev => Math.min(prev + Math.random() * 5, actualProgress))
     }, 500)
 
     // Simulate source discovery
@@ -73,34 +81,77 @@ export default function ElangPage() {
       }
     }, 800)
 
+    // Retry logic in UI
+    let attempts = 0
+    const maxAttempts = 3
+
     try {
-      const response = await fetch('/api/elang/research', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          niche: selectedNiche,
-          maxProducts,
-        }),
-      })
+      let success = false
+      let lastError = ''
 
-      const data = await response.json()
+      while (attempts < maxAttempts && !success) {
+        attempts++
+        if (attempts > 1) {
+          setRetryCount(attempts - 1)
+          const waitTime = (attempts - 1) * 3
+          console.log(`Retry attempt ${attempts}, waiting ${waitTime}s...`)
+          await new Promise(resolve => setTimeout(resolve, waitTime * 1000))
+        }
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to research products')
+        try {
+          const response = await fetch('/api/elang/research', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              niche: selectedNiche,
+              maxProducts,
+            }),
+          })
+
+          const data = await response.json()
+
+          if (!response.ok) {
+            // Check if it's a retryable error
+            const errorMsg = data.error || ''
+            if (errorMsg.includes('high demand') || errorMsg.includes('overloaded') ||
+                errorMsg.includes('429') || errorMsg.includes('503') || errorMsg.includes('rate limit')) {
+              lastError = errorMsg
+              if (attempts < maxAttempts) {
+                console.log(`Attempt ${attempts} failed, will retry...`)
+                continue
+              }
+            }
+            throw new Error(data.error || 'Failed to research products')
+          }
+
+          setResults(data.products || [])
+          setSearchProgress(100)
+          setSearchSources(sources)
+          success = true
+        } catch (err: any) {
+          lastError = err.message || 'Unknown error'
+          if (attempts < maxAttempts) {
+            console.log(`Attempt ${attempts} error: ${lastError}, retrying...`)
+            continue
+          }
+        }
       }
 
-      setResults(data.products || [])
-      setSearchProgress(100)
-      setSearchSources(sources)
+      if (!success) {
+        throw new Error(lastError || 'Max retries exceeded')
+      }
     } catch (err: any) {
-      setError(err.message || 'Terjadi kesalahan saat riset produk')
+      setError(err.message?.includes('high demand') || err.message?.includes('overloaded')
+        ? 'Gemini AI sedang sibuk. Coba lagi dalam 1-2 menit.'
+        : err.message || 'Terjadi kesalahan saat riset produk')
       setResults([])
     } finally {
       clearInterval(progressInterval)
       clearInterval(sourceInterval)
       setIsSearching(false)
+      setRetryCount(0)
     }
   }
 
@@ -252,6 +303,18 @@ export default function ElangPage() {
                 Menelusuri berbagai sumber untuk menemukan produk trending
               </p>
             </div>
+
+            {/* Retry Indicator */}
+            {retryCount > 0 && (
+              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-center gap-2 text-amber-700">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-sm font-medium">
+                    🔄 Retry attempt {retryCount + 1}/3 - Gemini sedang sibuk, tunggu sebentar...
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* Progress Bar */}
             <div className="max-w-md mx-auto mb-6">

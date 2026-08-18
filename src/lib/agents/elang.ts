@@ -33,6 +33,40 @@ WASPADA:
 - Jangan kasih produk yang sulit dibuatin konten visual
 - Prioritaskan produk Indonesia atau yang familiar di pasar Indonesia`
 
+// Retry logic with exponential backoff
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  maxRetries: number = 3,
+  initialDelay: number = 1000
+): Promise<Response> {
+  let lastError: Error | null = null
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const response = await fetch(url, options)
+
+      // If rate limited (429) or overloaded (503), retry
+      if (response.status === 429 || response.status === 503) {
+        throw new Error(`Rate limited: ${response.status}`)
+      }
+
+      return response
+    } catch (error: any) {
+      lastError = error
+      console.log(`Attempt ${i + 1} failed: ${error.message}. Retrying...`)
+
+      if (i < maxRetries - 1) {
+        // Exponential backoff: 1s, 2s, 4s
+        const delay = initialDelay * Math.pow(2, i)
+        await new Promise(resolve => setTimeout(resolve, delay))
+      }
+    }
+  }
+
+  throw lastError || new Error('Max retries exceeded')
+}
+
 export async function researchProducts(
   niche: string,
   maxProducts: number = 10
@@ -78,53 +112,80 @@ PENTING:
 - Berikan produk yang BENAR-BENAR TRENDING SAAT INI (Agustus 2026)
 - Produk harus relevan dengan pasar Indonesia
 - Prioritaskan produk dengan harga 20rb - 300rb
-- Produk harus punya POTENSIAL VISUAL yang bagus untuk konten`
+- Produk harus punya POTENSIAL VISUAL yang bagus untuk konten
+- Jangan beri produk yang sama berulang kali
+- Beri variasi produk yang berbeda-beda`
 
-  try {
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY
-    const model = 'gemini-3.6-flash'
+  let lastError: Error | null = null
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{ text: `${ELANG_SYSTEM_PROMPT}\n\n${prompt}` }]
-        }],
-        generationConfig: {
-          temperature: 0.8,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 8192,
-        }
-      })
-    })
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY
+      const model = 'gemini-3.6-flash'
 
-    const data = await response.json()
+      console.log(`Attempt ${attempt}: Calling Gemini API...`)
 
-    if (!response.ok) {
-      console.error('Gemini API error:', data)
-      throw new Error(data.error?.message || 'Failed to call Gemini API')
+      const response = await fetchWithRetry(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{ text: `${ELANG_SYSTEM_PROMPT}\n\n${prompt}` }]
+            }],
+            generationConfig: {
+              temperature: 0.8,
+              topK: 40,
+              topP: 0.95,
+              maxOutputTokens: 8192,
+            }
+          })
+        },
+        3,
+        2000 // 2s initial delay
+      )
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        console.error('Gemini API error:', data)
+        const errorMsg = data.error?.message || `HTTP ${response.status}`
+        throw new Error(errorMsg)
+      }
+
+      if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
+        throw new Error('Invalid response from Gemini - no content')
+      }
+
+      const text = data.candidates[0].content.parts[0].text
+
+      // Extract JSON from response
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) {
+        throw new Error('No JSON found in response')
+      }
+
+      const result = JSON.parse(jsonMatch[0])
+      console.log(`Success! Found ${result.products?.length || 0} products`)
+      return result.products || []
+    } catch (error: any) {
+      console.error(`Attempt ${attempt} failed:`, error.message)
+      lastError = error
+
+      // Wait before retry
+      if (attempt < 3) {
+        const waitTime = attempt * 3
+        console.log(`Waiting ${waitTime} seconds before retry...`)
+        await new Promise(resolve => setTimeout(resolve, waitTime * 1000))
+      }
     }
-
-    if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
-      throw new Error('Invalid response from Gemini')
-    }
-
-    const text = data.candidates[0].content.parts[0].text
-
-    // Extract JSON from response
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) {
-      throw new Error('No JSON found in response')
-    }
-
-    const result = JSON.parse(jsonMatch[0])
-    return result.products || []
-  } catch (error) {
-    console.error('Elang research error:', error)
-    throw error
   }
+
+  // All attempts failed
+  const errorMessage = lastError?.message || 'Max retries exceeded'
+  console.error('All attempts failed:', errorMessage)
+  throw new Error(`Gemini overloaded. ${errorMessage}. Coba lagi dalam beberapa menit.`)
 }
