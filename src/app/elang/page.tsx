@@ -8,14 +8,13 @@ import { Select } from '@/components/ui/Input'
 import { cn, getDifficultyColor, getScoreColor } from '@/lib/utils'
 import {
   Search,
-  TrendingUp,
   DollarSign,
   Eye,
   CheckCircle2,
   Loader2,
   AlertCircle,
-  ArrowRight,
-  Save,
+  Globe,
+  Zap,
 } from 'lucide-react'
 import { TrendingProduct } from '@/lib/types'
 import { supabase } from '@/lib/supabase/client'
@@ -29,12 +28,20 @@ const niches = [
   { value: 'makanan', label: '🍕 Makanan' },
 ]
 
+// Real steps that actually happen
+const searchSteps = [
+  { id: 'browse', label: '🌐 Browsing internet untuk data real-time', icon: Globe },
+  { id: 'analyze', label: '🧠 Menganalisis trending products', icon: Zap },
+  { id: 'compile', label: '📋 Menyusun hasil riset', icon: Search },
+]
+
 export default function ElangPage() {
   const [selectedNiche, setSelectedNiche] = useState('rumah-tangga')
   const [maxProducts, setMaxProducts] = useState(10)
   const [isSearching, setIsSearching] = useState(false)
   const [searchProgress, setSearchProgress] = useState(0)
-  const [searchSources, setSearchSources] = useState<string[]>([])
+  const [completedSteps, setCompletedSteps] = useState<string[]>([])
+  const [currentStep, setCurrentStep] = useState<string | null>(null)
   const [results, setResults] = useState<TrendingProduct[]>([])
   const [selectedProducts, setSelectedProducts] = useState<TrendingProduct[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -53,35 +60,35 @@ export default function ElangPage() {
   const handleSearch = async () => {
     setIsSearching(true)
     setSearchProgress(0)
-    setSearchSources([])
+    setCompletedSteps([])
+    setCurrentStep('browse')
     setResults([])
     setError(null)
     setSelectedProducts([])
 
-    // Simulate progress with retry awareness
-    let actualProgress = 0
+    // Realistic progress based on actual steps
+    const stepProgress = [30, 60, 90] // Each step adds progress
+    let stepIndex = 0
+
+    // Simulate step progression
     const progressInterval = setInterval(() => {
-      if (retryCount > 0) {
-        // Show retry progress
-        actualProgress = Math.min(actualProgress + Math.random() * 10, 80)
-      } else {
-        actualProgress = Math.min(actualProgress + Math.random() * 15, 90)
-      }
-      setSearchProgress(prev => Math.min(prev + Math.random() * 5, actualProgress))
-    }, 500)
+      setSearchProgress(prev => {
+        if (stepIndex < stepProgress.length) {
+          const target = stepProgress[stepIndex]
+          if (prev >= target) {
+            // Move to next step
+            if (stepIndex < searchSteps.length - 1) {
+              stepIndex++
+              setCompletedSteps(prev => [...prev, searchSteps[stepIndex - 1].id])
+              setCurrentStep(searchSteps[stepIndex].id)
+            }
+          }
+        }
+        return Math.min(prev + Math.random() * 3, stepIndex < searchSteps.length ? stepProgress[stepIndex] - 5 : 95)
+      })
+    }, 200)
 
-    // Simulate source discovery
-    const sources = ['Google Trends', 'TikTok Trending', 'Instagram Reels', 'Shopee Best Sellers', 'Product Reviews']
-    let sourceIndex = 0
-
-    const sourceInterval = setInterval(() => {
-      if (sourceIndex < sources.length) {
-        setSearchSources(prev => [...prev, sources[sourceIndex]])
-        sourceIndex++
-      }
-    }, 800)
-
-    // Retry logic in UI
+    // Retry logic
     let attempts = 0
     const maxAttempts = 3
 
@@ -93,6 +100,7 @@ export default function ElangPage() {
         attempts++
         if (attempts > 1) {
           setRetryCount(attempts - 1)
+          setCurrentStep('browse')
           const waitTime = (attempts - 1) * 3
           console.log(`Retry attempt ${attempts}, waiting ${waitTime}s...`)
           await new Promise(resolve => setTimeout(resolve, waitTime * 1000))
@@ -113,29 +121,24 @@ export default function ElangPage() {
           const data = await response.json()
 
           if (!response.ok) {
-            // Check if it's a retryable error
             const errorMsg = data.error || ''
             if (errorMsg.includes('high demand') || errorMsg.includes('overloaded') ||
-                errorMsg.includes('429') || errorMsg.includes('503') || errorMsg.includes('rate limit')) {
+                errorMsg.includes('429') || errorMsg.includes('503')) {
               lastError = errorMsg
-              if (attempts < maxAttempts) {
-                console.log(`Attempt ${attempts} failed, will retry...`)
-                continue
-              }
+              if (attempts < maxAttempts) continue
             }
             throw new Error(data.error || 'Failed to research products')
           }
 
-          setResults(data.products || [])
+          // Complete all steps
+          setCompletedSteps(searchSteps.map(s => s.id))
+          setCurrentStep(null)
           setSearchProgress(100)
-          setSearchSources(sources)
+          setResults(data.products || [])
           success = true
         } catch (err: any) {
           lastError = err.message || 'Unknown error'
-          if (attempts < maxAttempts) {
-            console.log(`Attempt ${attempts} error: ${lastError}, retrying...`)
-            continue
-          }
+          if (attempts < maxAttempts) continue
         }
       }
 
@@ -143,13 +146,14 @@ export default function ElangPage() {
         throw new Error(lastError || 'Max retries exceeded')
       }
     } catch (err: any) {
-      setError(err.message?.includes('high demand') || err.message?.includes('overloaded')
-        ? 'Gemini AI sedang sibuk. Coba lagi dalam 1-2 menit.'
-        : err.message || 'Terjadi kesalahan saat riset produk')
+      setError(
+        err.message?.includes('high demand') || err.message?.includes('overloaded')
+          ? 'Gemini AI sedang sibuk. Coba lagi dalam 1-2 menit.'
+          : err.message || 'Terjadi kesalahan saat riset produk'
+      )
       setResults([])
     } finally {
       clearInterval(progressInterval)
-      clearInterval(sourceInterval)
       setIsSearching(false)
       setRetryCount(0)
     }
@@ -189,8 +193,6 @@ export default function ElangPage() {
       }
 
       setSavedCount(data.count)
-
-      // Reset after save
       setTimeout(() => {
         setSavedCount(0)
         setSelectedProducts([])
@@ -245,7 +247,7 @@ export default function ElangPage() {
             Cari Produk Trending
           </h2>
           <p className="text-sm text-gray-500">
-            Elang akan mencari produk trending dari berbagai sumber untukmu
+            Elang akan browsing internet untuk menemukan produk trending real-time
           </p>
         </CardHeader>
         <CardContent>
@@ -300,7 +302,7 @@ export default function ElangPage() {
                 Elang Sedang Berburu...
               </h3>
               <p className="text-gray-500 text-sm">
-                Menelusuri berbagai sumber untuk menemukan produk trending
+                Browsing internet untuk data real-time dari berbagai platform
               </p>
             </div>
 
@@ -310,7 +312,7 @@ export default function ElangPage() {
                 <div className="flex items-center gap-2 text-amber-700">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span className="text-sm font-medium">
-                    🔄 Retry attempt {retryCount + 1}/3 - Gemini sedang sibuk, tunggu sebentar...
+                    🔄 Retry attempt {retryCount + 1}/3 - Gemini sedang sibuk...
                   </span>
                 </div>
               </div>
@@ -329,26 +331,28 @@ export default function ElangPage() {
               </p>
             </div>
 
-            {/* Sources */}
-            <div className="max-w-md mx-auto space-y-2">
-              {['Google Trends', 'TikTok Trending', 'Instagram Reels', 'Shopee Best Sellers', 'Product Reviews'].map((source, index) => {
-                const isCompleted = searchSources.includes(source)
-                const isActive = !isCompleted && index === searchSources.length
+            {/* Real Steps */}
+            <div className="max-w-md mx-auto space-y-3">
+              {searchSteps.map((step, index) => {
+                const isCompleted = completedSteps.includes(step.id)
+                const isActive = currentStep === step.id
+                const Icon = step.icon
+
                 return (
-                  <div key={source} className="flex items-center gap-3 text-sm">
+                  <div key={step.id} className="flex items-center gap-3 text-sm">
                     {isCompleted ? (
-                      <CheckCircle2 className="w-4 h-4 text-green-500" />
+                      <CheckCircle2 className="w-5 h-5 text-green-500" />
                     ) : isActive ? (
-                      <Loader2 className="w-4 h-4 text-sky-500 animate-spin" />
+                      <Icon className="w-5 h-5 text-sky-500 animate-pulse" />
                     ) : (
-                      <div className="w-4 h-4 rounded-full border-2 border-gray-300" />
+                      <div className="w-5 h-5 rounded-full border-2 border-gray-300" />
                     )}
                     <span className={cn(
                       isCompleted && "text-green-600",
                       isActive && "text-sky-600 font-medium",
                       !isCompleted && !isActive && "text-gray-400"
                     )}>
-                      {source}
+                      {step.label}
                     </span>
                   </div>
                 )
