@@ -70,7 +70,7 @@ export default function ElangPage() {
     })
   }, [])
 
-  // Check for paused search on mount
+  // Check for previous search/results on mount
   useEffect(() => {
     const stored = sessionStorage.getItem('elang_search')
     if (stored) {
@@ -78,17 +78,16 @@ export default function ElangPage() {
       if (data.status === 'done') {
         if (data.results && data.results.length > 0) {
           setResults(data.results)
-          showToast(`Elang selesai! Ditemukan ${data.results.length} produk untuk "${data.query}"`, 'success')
+          setSearchQuery(data.query || '')
+          // Keep results in sessionStorage
         } else if (data.error) {
           setError(data.error)
           showToast(data.error, 'error')
         }
-        sessionStorage.removeItem('elang_search')
       } else if (data.status === 'running') {
         // Search was running when we left - auto restart
         setSearchQuery(data.query || '')
         showToast('Search sebelumnya dihentikan. Memulai ulang...', 'info')
-        // Small delay then auto-search
         setTimeout(() => {
           handleSearch()
         }, 1000)
@@ -96,25 +95,19 @@ export default function ElangPage() {
     }
   }, [])
 
-  // Handle page visibility - mark as interrupted when navigating away
+  // Save results to sessionStorage when results change
   useEffect(() => {
-    const handleBeforeUnload = () => {
+    if (results.length > 0) {
       const stored = sessionStorage.getItem('elang_search')
       if (stored) {
         const data = JSON.parse(stored)
-        if (data.status === 'running') {
-          sessionStorage.setItem('elang_search', JSON.stringify({
-            ...data,
-            status: 'running', // Keep as running, we'll detect on mount
-            interrupted: true
-          }))
-        }
+        sessionStorage.setItem('elang_search', JSON.stringify({
+          ...data,
+          results: results,
+        }))
       }
     }
-
-    window.addEventListener('beforeunload', handleBeforeUnload)
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [])
+  }, [results])
 
   // Filter suggestions
   const filteredSuggestions = suggestions.filter(s =>

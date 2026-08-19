@@ -71,7 +71,7 @@ export default function ProdukPage() {
     affiliate_link: '',
     product_image: '',
     notes: '',
-    status: 'draft' as const,
+    status: 'draft' as 'draft' | 'ready' | 'posted',
   })
 
   useEffect(() => {
@@ -130,7 +130,7 @@ export default function ProdukPage() {
       affiliate_link: product.affiliate_link || '',
       product_image: product.product_image || '',
       notes: product.notes || '',
-      status: product.status || 'draft',
+      status: (product.status || 'draft') as 'draft' | 'ready' | 'posted',
     })
     setShowModal(true)
   }
