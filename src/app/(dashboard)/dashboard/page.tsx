@@ -149,7 +149,7 @@ const recentActivities = [
 
 export default function Dashboard() {
   return (
-    <div class="border-4 border-yellow-500 outline-4 outline-yellow-300 outline-offset-2 outline">
+    <div className="border-4 border-yellow-500 outline-4 outline-yellow-300 outline-offset-2 outline" style={{ margin: 0, padding: 0 }}>
       {/* Welcome Section */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
