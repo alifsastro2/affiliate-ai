@@ -40,7 +40,9 @@ export default function DashboardLayout({
           paddingBottom: '24px',
         }}
       >
-        {children}
+        <div style={{ margin: 0, padding: 0, maxWidth: 'none' }}>
+          {children}
+        </div>
       </main>
 
       {/* Global Components */}
