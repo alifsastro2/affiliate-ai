@@ -9,12 +9,12 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <div style={{ backgroundColor: 'red', minHeight: '100vh', margin: 0 }}>
+    <div style={{ backgroundColor: 'red', minHeight: '100vh', margin: '0 !important', padding: '0 !important' }}>
       <Sidebar />
 
-      {/* Blue - marginLeft equals sidebar width (288px) */}
-      <div style={{ backgroundColor: 'blue', margin: 0, marginLeft: '288px', width: 'calc(100% - 288px)', minHeight: '100vh' }}>
-        <div style={{ padding: '24px' }}>
+      {/* Blue with important styles */}
+      <div style={{ backgroundColor: 'blue', margin: '0 !important', padding: '0 !important', marginLeft: '288px !important', width: 'calc(100% - 288px) !important', minHeight: '100vh !important' }}>
+        <div style={{ padding: '24px !important' }}>
           {children}
         </div>
       </div>
