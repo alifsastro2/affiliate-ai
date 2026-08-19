@@ -1,4 +1,4 @@
-'use client'
+'client'
 
 import { useState, useEffect } from 'react'
 import { Sidebar } from '@/components/layout/Sidebar'
@@ -34,7 +34,7 @@ export default function DashboardLayout({
         className="border-l-4 border-red-500"
         style={{
           position: 'relative',
-          marginLeft: '276px',
+          marginLeft: '264px',
           paddingLeft: '0px',
         }}
       >

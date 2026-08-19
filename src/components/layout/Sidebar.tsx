@@ -42,14 +42,6 @@ export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
 
-  // Debug: Log sidebar state changes
-  useEffect(() => {
-    console.log('=== SIDEBAR DEBUG ===')
-    console.log('isCollapsed:', isCollapsed)
-    console.log('Sidebar width:', isCollapsed ? 'w-[80px]' : 'w-[288px]')
-    console.log('==================')
-  }, [isCollapsed])
-
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
