@@ -13,10 +13,6 @@ export default function DashboardLayout({
 
   useEffect(() => {
     setMounted(true)
-    console.log('=== LAYOUT DEBUG ===')
-    console.log('Sidebar width:', window.innerWidth >= 1024 ? 'w-[288px]' : 'mobile')
-    console.log('Window innerWidth:', window.innerWidth)
-    console.log('===================')
   }, [])
 
   if (!mounted) {
@@ -29,16 +25,23 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Sidebar */}
+      {/* Sidebar - fixed at left, width 288px */}
       <Sidebar />
 
-      {/* Main Content - Debug: red border to see boundary */}
+      {/* Main Content - starts at 288px where sidebar ends */}
       <main
         id="main-content"
         className="border-l-4 border-red-500"
-        style={{ paddingLeft: '288px' }}
+        style={{
+          position: 'relative',
+          marginLeft: '288px',
+          width: 'calc(100% - 288px)',
+          paddingLeft: '0px',
+        }}
       >
-        {children}
+        <div style={{ padding: '24px' }}>
+          {children}
+        </div>
       </main>
 
       {/* Global Components */}
