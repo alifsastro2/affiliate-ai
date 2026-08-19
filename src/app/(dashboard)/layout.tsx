@@ -13,11 +13,9 @@ export default function DashboardLayout({
       {/* Sidebar */}
       <Sidebar />
 
-      {/* Main Content - adjusted to start right after sidebar */}
-      <main className="pl-64 min-h-screen">
-        <div className="pt-0">
-          {children}
-        </div>
+      {/* Main Content - starts right after sidebar (w-72 = 288px = pl-72) */}
+      <main className="pl-72 min-h-screen">
+        {children}
       </main>
 
       {/* Global Components - Persist across all pages */}
