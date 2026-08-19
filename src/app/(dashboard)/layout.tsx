@@ -13,6 +13,12 @@ export default function DashboardLayout({
 
   useEffect(() => {
     setMounted(true)
+    console.log('=== LAYOUT MOUNTED ===')
+    console.log('Window width:', window.innerWidth)
+    console.log('Body margin:', window.getComputedStyle(document.body).marginLeft)
+    console.log('Body padding:', window.getComputedStyle(document.body).paddingLeft)
+    console.log('HTML margin:', window.getComputedStyle(document.documentElement).marginLeft)
+    console.log('=====================')
   }, [])
 
   if (!mounted) {
@@ -28,9 +34,16 @@ export default function DashboardLayout({
       {/* Sidebar - fixed positioned */}
       <Sidebar />
 
-      {/* Main Content - simple pl-72 approach */}
-      <div className="pl-[288px] pt-6 pr-6 pb-6">
-        {children}
+      {/* DEBUG WRAPPER - Blue border */}
+      <div
+        className="pl-[288px] border-4 border-blue-500"
+      >
+        {/* DEBUG INNER - Green border */}
+        <div
+          className="border-4 border-green-500"
+        >
+          {children}
+        </div>
       </div>
 
       {/* Global Components */}

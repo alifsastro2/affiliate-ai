@@ -149,7 +149,7 @@ const recentActivities = [
 
 export default function Dashboard() {
   return (
-    <div>
+    <div class="border-4 border-yellow-500">
       {/* Welcome Section */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
@@ -259,7 +259,7 @@ export default function Dashboard() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <div>
+              <div class="border-4 border-yellow-500">
                 <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-orange-500" />
                   AI Agents Status
@@ -284,7 +284,7 @@ export default function Dashboard() {
                       <div className={`w-10 h-10 bg-gradient-to-br ${agent.colorClass} rounded-xl flex items-center justify-center`}>
                         <Icon className="w-5 h-5 text-white" />
                       </div>
-                      <div>
+                      <div class="border-4 border-yellow-500">
                         <h3 className="font-semibold text-gray-900 group-hover:text-orange-600 transition-colors">
                           {agent.name}
                         </h3>
@@ -361,7 +361,7 @@ export default function Dashboard() {
       <Card className="mt-6">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
+            <div class="border-4 border-yellow-500">
               <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <Activity className="w-5 h-5 text-orange-500" />
                 Aktivitas Terakhir
