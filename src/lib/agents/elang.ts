@@ -129,12 +129,16 @@ PENTING:
 
   let lastError: Error | null = null
 
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  // Free tier has lower rate limits, so we retry more times with longer delays
+  const maxAttempts = 5
+  const baseDelay = 5000 // Start with 5 seconds
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY
       const model = 'gemini-3.6-flash'
 
-      console.log(`Attempt ${attempt}: Calling Gemini API...`)
+      console.log(`Attempt ${attempt}/${maxAttempts}: Calling Gemini API...`)
 
       const response = await fetchWithRetry(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
@@ -156,7 +160,7 @@ PENTING:
           })
         },
         3,
-        2000 // 2s initial delay
+        2000 // 2s delay for fetch retry
       )
 
       const data = await response.json()
@@ -186,11 +190,11 @@ PENTING:
       console.error(`Attempt ${attempt} failed:`, error.message)
       lastError = error
 
-      // Wait before retry
-      if (attempt < 3) {
-        const waitTime = attempt * 3
-        console.log(`Waiting ${waitTime} seconds before retry...`)
-        await new Promise(resolve => setTimeout(resolve, waitTime * 1000))
+      // Wait before retry - longer delays for free tier
+      if (attempt < maxAttempts) {
+        const waitTime = baseDelay * attempt // 5s, 10s, 15s, 20s
+        console.log(`Waiting ${waitTime/1000} seconds before retry...`)
+        await new Promise(resolve => setTimeout(resolve, waitTime))
       }
     }
   }
@@ -198,5 +202,5 @@ PENTING:
   // All attempts failed
   const errorMessage = lastError?.message || 'Max retries exceeded'
   console.error('All attempts failed:', errorMessage)
-  throw new Error(`Gemini overloaded. ${errorMessage}. Coba lagi dalam beberapa menit.`)
+  throw new Error(`Gemini AI sedang sangat sibuk (free tier). Coba lagi dalam 10-15 menit, atau coba jam-jam sepi seperti pagi hari.`)
 }

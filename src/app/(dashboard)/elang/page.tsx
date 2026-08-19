@@ -131,7 +131,7 @@ export default function ElangPage() {
     }, 200)
 
     let attempts = 0
-    const maxAttempts = 3
+    const maxAttempts = 5
 
     try {
       let success = false
@@ -142,7 +142,8 @@ export default function ElangPage() {
         if (attempts > 1) {
           setRetryCount(attempts - 1)
           setCurrentStep('browse')
-          const waitTime = (attempts - 1) * 3
+          const waitTime = attempts * 5 // 5s, 10s, 15s, 20s
+          showToast(`Mencoba lagi... (${attempts}/${maxAttempts}) Tunggu ${waitTime}s`, 'info')
           await new Promise(resolve => setTimeout(resolve, waitTime * 1000))
         }
 
