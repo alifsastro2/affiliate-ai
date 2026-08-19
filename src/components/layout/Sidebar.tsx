@@ -83,7 +83,7 @@ export function Sidebar() {
     <>
       <aside
         className={cn(
-          "fixed left-0 top-0 z-50 h-screen bg-white border-r border-gray-200 transition-all duration-150",
+          "fixed left-0 top-0 z-50 h-screen bg-white transition-all duration-150",
           isCollapsed ? "w-[80px]" : "w-[288px]"
         )}
       >
