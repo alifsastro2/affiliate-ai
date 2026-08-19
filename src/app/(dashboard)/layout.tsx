@@ -34,7 +34,7 @@ export default function DashboardLayout({
         className="border-l-4 border-red-500"
         style={{
           position: 'relative',
-          marginLeft: '264px',
+          marginLeft: '250px',
           paddingLeft: '0px',
         }}
       >
