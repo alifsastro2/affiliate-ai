@@ -8,20 +8,16 @@ import { supabase } from '@/lib/supabase/client'
 
 // Global search indicator - persists across all pages
 export function GlobalSearchIndicator() {
-  const [isSearching, setIsSearching] = useState(false)
-  const [query, setQuery] = useState('')
+  const [searchState, setSearchState] = useState<{status: string; query: string; startTime?: number} | null>(null)
   const router = useRouter()
 
   useEffect(() => {
     const checkSearch = () => {
       const stored = sessionStorage.getItem('elang_search')
       if (stored) {
-        const data = JSON.parse(stored)
-        setIsSearching(data.status === 'running')
-        setQuery(data.query || '')
+        setSearchState(JSON.parse(stored))
       } else {
-        setIsSearching(false)
-        setQuery('')
+        setSearchState(null)
       }
     }
 
@@ -36,16 +32,24 @@ export function GlobalSearchIndicator() {
     }
   }, [])
 
-  if (!isSearching) return null
+  if (!searchState || searchState.status === 'done') return null
+
+  const isPaused = searchState.status === 'paused'
 
   return (
     <button
       onClick={() => router.push('/elang')}
-      className="fixed top-4 right-20 z-50 flex items-center gap-2 px-4 py-2 bg-sky-500 text-white rounded-full shadow-lg hover:bg-sky-600 transition-all"
-      style={{ animation: 'pulse 2s infinite' }}
+      className={`fixed top-4 right-20 z-50 flex items-center gap-2 px-4 py-2 rounded-full shadow-lg transition-all ${
+        isPaused
+          ? 'bg-amber-500 hover:bg-amber-600'
+          : 'bg-sky-500 hover:bg-sky-600 animate-pulse'
+      } text-white`}
     >
-      <Loader2 className="w-4 h-4 animate-spin" />
-      <span className="text-sm font-medium">Elang hunting: {query}</span>
+      <Loader2 className={`w-4 h-4 ${!isPaused ? 'animate-spin' : ''}`} />
+      <span className="text-sm font-medium">
+        {isPaused ? '⏸️ Elang paused: ' : '🦅 Elang hunting: '}{searchState.query}
+      </span>
+      {isPaused && <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Klik untuk lanjut</span>}
     </button>
   )
 }
