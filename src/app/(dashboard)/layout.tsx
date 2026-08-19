@@ -28,14 +28,13 @@ export default function DashboardLayout({
       {/* Sidebar - fixed at left, width 288px */}
       <Sidebar />
 
-      {/* Main Content - starts at 288px where sidebar ends */}
+      {/* Main Content - starts at where sidebar ends */}
       <main
         id="main-content"
         className="border-l-4 border-red-500"
         style={{
           position: 'relative',
-          marginLeft: '288px',
-          width: 'calc(100% - 288px)',
+          marginLeft: '276px',
           paddingLeft: '0px',
         }}
       >
