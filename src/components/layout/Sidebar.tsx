@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Zap,
+  Package,
 } from 'lucide-react'
 import { UserButton } from '@/components/auth/UserButton'
 import { AuthForm } from '@/components/auth/AuthForm'
@@ -24,6 +25,7 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Pipeline', href: '/pipeline', icon: GitBranch, badge: 'Progress' },
   { name: 'Elang', href: '/elang', icon: Search, badge: 'Research' },
+  { name: 'Produk', href: '/produk', icon: Package, badge: 'Saya' },
   { name: 'Merak', href: '/merak', icon: Palette, badge: 'Content' },
   { name: 'Semut', href: '/semut', icon: BarChart3, badge: 'Analytics' },
   { name: 'Unta', href: '/unta', icon: Wallet, badge: 'Budget' },
@@ -145,6 +147,7 @@ export function Sidebar() {
                         "ml-auto text-xs px-2 py-0.5 rounded-full",
                         item.name === 'Pipeline' && "bg-orange-100 text-orange-600",
                         item.name === 'Elang' && "bg-sky-100 text-sky-600",
+                        item.name === 'Produk' && "bg-purple-100 text-purple-600",
                         item.name === 'Merak' && "bg-purple-100 text-purple-600",
                         item.name === 'Semut' && "bg-amber-100 text-amber-600",
                         item.name === 'Unta' && "bg-green-100 text-green-600",
