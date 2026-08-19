@@ -13,8 +13,8 @@ export default function DashboardLayout({
       {/* Sidebar */}
       <Sidebar />
 
-      {/* Main Content - tighter padding */}
-      <main className="pl-72">
+      {/* Main Content - exact pixel to match sidebar (288px = w-72) */}
+      <main className="pl-[288px]">
         <div className="p-6">
           {children}
         </div>
