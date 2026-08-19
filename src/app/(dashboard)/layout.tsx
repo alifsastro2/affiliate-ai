@@ -24,26 +24,14 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50" style={{ margin: 0, padding: 0 }}>
-      {/* Sidebar - fixed at left, width 288px */}
+    <div className="min-h-screen bg-gray-50">
+      {/* Sidebar - fixed positioned */}
       <Sidebar />
 
-      {/* Main Content - padding-left matches sidebar width */}
-      <main
-        id="main-content"
-        className="border-l-4 border-red-500"
-        style={{
-          margin: 0,
-          paddingLeft: '288px',
-          paddingRight: '24px',
-          paddingTop: '24px',
-          paddingBottom: '24px',
-        }}
-      >
-        <div style={{ margin: 0, padding: 0, maxWidth: 'none' }}>
-          {children}
-        </div>
-      </main>
+      {/* Main Content - simple pl-72 approach */}
+      <div className="pl-[288px] pt-6 pr-6 pb-6">
+        {children}
+      </div>
 
       {/* Global Components */}
       <GlobalSearchIndicator />
