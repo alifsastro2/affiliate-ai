@@ -13,9 +13,11 @@ export default function DashboardLayout({
       {/* Sidebar */}
       <Sidebar />
 
-      {/* Main Content */}
-      <main className="pl-72 min-h-screen">
-        {children}
+      {/* Main Content - tighter padding */}
+      <main className="pl-72">
+        <div className="p-6">
+          {children}
+        </div>
       </main>
 
       {/* Global Components */}
