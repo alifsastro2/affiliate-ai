@@ -12,9 +12,9 @@ export default function DashboardLayout({
     <div style={{ backgroundColor: 'red', minHeight: '100vh' }}>
       <Sidebar />
 
-      {/* DEBUG: Blue background */}
-      <div style={{ backgroundColor: 'blue', marginLeft: '288px' }}>
-        {/* DEBUG: Green background */}
+      {/* Blue fills the space after sidebar */}
+      <div style={{ backgroundColor: 'blue', marginLeft: '288px', minHeight: '100vh' }}>
+        {/* Green inside blue */}
         <div style={{ backgroundColor: 'green', padding: '24px' }}>
           {children}
         </div>
