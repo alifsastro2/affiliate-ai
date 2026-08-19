@@ -58,12 +58,12 @@ export function UserButton({ onAuthRequired }: UserButtonProps) {
     <div className="relative">
       <button
         onClick={() => setShowMenu(!showMenu)}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white border-2 border-gray-200 hover:border-orange-300 hover:bg-orange-50 transition-all shadow-sm"
       >
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-medium">
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white font-bold text-sm">
           {userInitial}
         </div>
-        <span className="text-sm font-medium text-gray-700 hidden md:block">
+        <span className="text-sm font-semibold text-gray-800 hidden md:block">
           {userName}
         </span>
       </button>

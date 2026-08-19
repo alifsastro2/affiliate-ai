@@ -13,8 +13,8 @@ export default function DashboardLayout({
       {/* Sidebar fixed */}
       <Sidebar />
 
-      {/* Content - position absolute, left matches sidebar width */}
-      <div style={{ position: 'absolute', left: '288px', top: 0, right: 0, bottom: 0, padding: '24px', overflow: 'auto' }}>
+      {/* Content - pushed down for header space */}
+      <div style={{ position: 'absolute', left: '288px', top: '64px', right: 0, bottom: 0, padding: '24px', overflow: 'auto' }}>
         {children}
       </div>
 
