@@ -8,16 +8,19 @@ import { supabase } from '@/lib/supabase/client'
 
 // Global search indicator - persists across all pages
 export function GlobalSearchIndicator() {
-  const [searchState, setSearchState] = useState<{status: string; query: string; startTime?: number} | null>(null)
+  const [searchState, setSearchState] = useState<{status: string; query: string; completedAt?: number} | null>(null)
+  const [showResult, setShowResult] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
     const checkSearch = () => {
       const stored = sessionStorage.getItem('elang_search')
       if (stored) {
-        setSearchState(JSON.parse(stored))
+        const data = JSON.parse(stored)
+        setSearchState(data)
       } else {
         setSearchState(null)
+        setShowResult(false)
       }
     }
 
@@ -32,24 +35,33 @@ export function GlobalSearchIndicator() {
     }
   }, [])
 
-  if (!searchState || searchState.status === 'done') return null
+  if (!searchState) return null
 
-  const isPaused = searchState.status === 'paused'
+  // Show completion message
+  if (searchState.status === 'done') {
+    if (showResult) {
+      return (
+        <button
+          onClick={() => {
+            setShowResult(false)
+            router.push('/elang')
+          }}
+          className="fixed top-4 right-20 z-50 flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg transition-all"
+        >
+          <span className="text-lg">✅</span>
+          <span className="text-sm font-medium">Elang selesai! Klik untuk lihat hasil</span>
+        </button>
+      )
+    }
+  }
 
   return (
     <button
       onClick={() => router.push('/elang')}
-      className={`fixed top-4 right-20 z-50 flex items-center gap-2 px-4 py-2 rounded-full shadow-lg transition-all ${
-        isPaused
-          ? 'bg-amber-500 hover:bg-amber-600'
-          : 'bg-sky-500 hover:bg-sky-600 animate-pulse'
-      } text-white`}
+      className="fixed top-4 right-20 z-50 flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-lg transition-all animate-pulse"
     >
-      <Loader2 className={`w-4 h-4 ${!isPaused ? 'animate-spin' : ''}`} />
-      <span className="text-sm font-medium">
-        {isPaused ? '⏸️ Elang paused: ' : '🦅 Elang hunting: '}{searchState.query}
-      </span>
-      {isPaused && <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Klik untuk lanjut</span>}
+      <Loader2 className="w-4 h-4 animate-spin" />
+      <span className="text-sm font-medium">🦅 Elang paused: {searchState.query}</span>
     </button>
   )
 }

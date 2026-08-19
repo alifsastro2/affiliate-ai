@@ -70,7 +70,7 @@ export default function ElangPage() {
     })
   }, [])
 
-  // Check for paused/pending search on mount
+  // Check for paused search on mount
   useEffect(() => {
     const stored = sessionStorage.getItem('elang_search')
     if (stored) {
@@ -84,34 +84,36 @@ export default function ElangPage() {
           showToast(data.error, 'error')
         }
         sessionStorage.removeItem('elang_search')
-      } else if (data.status === 'paused') {
-        // Show option to resume
+      } else if (data.status === 'running') {
+        // Search was running when we left - auto restart
         setSearchQuery(data.query || '')
-        setHasPausedSearch(true)
-        showToast('Elang search sebelumnya di-pause. Klik "Lanjut" untuk melanjutkan.', 'info')
+        showToast('Search sebelumnya dihentikan. Memulai ulang...', 'info')
+        // Small delay then auto-search
+        setTimeout(() => {
+          handleSearch()
+        }, 1000)
       }
     }
   }, [])
 
-  // Handle page visibility - pause search when navigating away
+  // Handle page visibility - mark as interrupted when navigating away
   useEffect(() => {
-    const handleVisibilityChange = () => {
+    const handleBeforeUnload = () => {
       const stored = sessionStorage.getItem('elang_search')
       if (stored) {
         const data = JSON.parse(stored)
-        // If search is running and user leaves the page, pause it
-        if (data.status === 'running' && document.hidden) {
+        if (data.status === 'running') {
           sessionStorage.setItem('elang_search', JSON.stringify({
             ...data,
-            status: 'paused',
-            pausedAt: Date.now()
+            status: 'running', // Keep as running, we'll detect on mount
+            interrupted: true
           }))
         }
       }
     }
 
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [])
 
   // Filter suggestions
@@ -129,11 +131,6 @@ export default function ElangPage() {
     setSelectedProducts([])
     setShowSuggestions(false)
     setHasPausedSearch(false)
-
-    // If resuming from paused, clear the paused state
-    if (hasPausedSearch) {
-      sessionStorage.removeItem('elang_search')
-    }
 
     const query = searchQuery.trim() || 'semua produk trending di Indonesia'
 
