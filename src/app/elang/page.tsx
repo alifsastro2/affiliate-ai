@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -19,6 +19,8 @@ import {
   TrendingUp,
   Save,
   Sparkles,
+  Bell,
+  X,
 } from 'lucide-react'
 import { TrendingProduct } from '@/lib/types'
 import { supabase } from '@/lib/supabase/client'
@@ -29,13 +31,54 @@ const suggestions = [
   'tas wanita import',
   'skincare Korea',
   'gadget murah',
-  'sepatu running',
+  'sepato running',
   'perlengkapan bayi',
   'dress wanita',
   'smartwatch fitness',
   'sprei motif',
   'tumbler minuman',
 ]
+
+// Search steps
+const searchSteps = [
+  { id: 'browse', label: 'Browsing internet untuk data real-time', icon: Globe },
+  { id: 'analyze', label: 'Menganalisis trending products', icon: Zap },
+  { id: 'compile', label: 'Menyusun hasil riset', icon: FileText },
+]
+
+// Toast notification component
+function Toast({ message, type, onClose }: { message: string; type: 'success' | 'error' | 'info'; onClose: () => void }) {
+  return (
+    <div className={cn(
+      "fixed bottom-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg animate-slide-up",
+      type === 'success' && "bg-green-500 text-white",
+      type === 'error' && "bg-red-500 text-white",
+      type === 'info' && "bg-blue-500 text-white",
+    )}>
+      {type === 'success' && <CheckCircle2 className="w-5 h-5" />}
+      {type === 'error' && <AlertCircle className="w-5 h-5" />}
+      {type === 'info' && <Loader2 className="w-5 h-5 animate-spin" />}
+      <span className="font-medium">{message}</span>
+      <button onClick={onClose} className="ml-2 hover:opacity-80">
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  )
+}
+
+// Background search indicator
+function BackgroundSearchIndicator({ query, onClick }: { query: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 bg-sky-500 text-white rounded-full shadow-lg hover:bg-sky-600 transition-colors animate-pulse"
+    >
+      <Loader2 className="w-4 h-4 animate-spin" />
+      <span className="text-sm font-medium">Elang hunting: {query}</span>
+      <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs">Click untuk lihat</span>
+    </button>
+  )
+}
 
 export default function ElangPage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -52,12 +95,37 @@ export default function ElangPage() {
   const [savedCount, setSavedCount] = useState(0)
   const [user, setUser] = useState<any>(null)
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
+  const [backgroundSearch, setBackgroundSearch] = useState<{ query: string; status: 'running' | 'done' } | null>(null)
 
   // Get current user
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user)
     })
+  }, [])
+
+  // Check for background search on mount
+  useEffect(() => {
+    const stored = sessionStorage.getItem('elang_search')
+    if (stored) {
+      const data = JSON.parse(stored)
+      if (data.status === 'done') {
+        // Search completed while away
+        setBackgroundSearch({ query: data.query, status: 'done' })
+        if (data.results && data.results.length > 0) {
+          setResults(data.results)
+          setToast({
+            message: `Elang selesai! Ditemukan ${data.results.length} produk trending untuk "${data.query}"`,
+            type: 'success'
+          })
+        } else if (data.error) {
+          setError(data.error)
+          setToast({ message: data.error, type: 'error' })
+        }
+        sessionStorage.removeItem('elang_search')
+      }
+    }
   }, [])
 
   // Filter suggestions based on input
@@ -75,10 +143,16 @@ export default function ElangPage() {
     setSelectedProducts([])
     setShowSuggestions(false)
 
-    // Determine search query - if empty, search for all trending
     const query = searchQuery.trim() || 'semua produk trending di Indonesia'
 
-    // Realistic progress based on actual steps
+    // Store search state in sessionStorage for persistence across navigation
+    sessionStorage.setItem('elang_search', JSON.stringify({
+      query,
+      status: 'running',
+      startTime: Date.now()
+    }))
+    setBackgroundSearch({ query, status: 'running' })
+
     const stepProgress = [30, 60, 90]
     let stepIndex = 0
 
@@ -111,7 +185,6 @@ export default function ElangPage() {
           setRetryCount(attempts - 1)
           setCurrentStep('browse')
           const waitTime = (attempts - 1) * 3
-          console.log(`Retry attempt ${attempts}, waiting ${waitTime}s...`)
           await new Promise(resolve => setTimeout(resolve, waitTime * 1000))
         }
 
@@ -144,6 +217,16 @@ export default function ElangPage() {
           setSearchProgress(100)
           setResults(data.products || [])
           success = true
+
+          // Store results for when user returns
+          sessionStorage.setItem('elang_search', JSON.stringify({
+            query,
+            status: 'done',
+            results: data.products || [],
+            completedAt: Date.now()
+          }))
+          setBackgroundSearch({ query, status: 'done' })
+
         } catch (err: any) {
           lastError = err.message || 'Unknown error'
           if (attempts < maxAttempts) continue
@@ -154,16 +237,41 @@ export default function ElangPage() {
         throw new Error(lastError || 'Max retries exceeded')
       }
     } catch (err: any) {
-      setError(
-        err.message?.includes('high demand') || err.message?.includes('overloaded')
-          ? 'Gemini AI sedang sibuk. Coba lagi dalam 1-2 menit.'
-          : err.message || 'Terjadi kesalahan saat riset produk'
-      )
+      const errorMsg = err.message?.includes('high demand') || err.message?.includes('overloaded')
+        ? 'Gemini AI sedang sibuk. Coba lagi dalam 1-2 menit.'
+        : err.message || 'Terjadi kesalahan saat riset produk'
+
+      setError(errorMsg)
       setResults([])
+
+      sessionStorage.setItem('elang_search', JSON.stringify({
+        query,
+        status: 'done',
+        error: errorMsg,
+        completedAt: Date.now()
+      }))
+      setBackgroundSearch({ query, status: 'done' })
     } finally {
       clearInterval(progressInterval)
       setIsSearching(false)
       setRetryCount(0)
+    }
+  }
+
+  const handleBackgroundSearchClick = () => {
+    // Clear background indicator and show results if available
+    setBackgroundSearch(null)
+    const stored = sessionStorage.getItem('elang_search')
+    if (stored) {
+      const data = JSON.parse(stored)
+      if (data.results) {
+        setResults(data.results)
+        setToast({
+          message: `Ditemukan ${data.results.length} produk!`,
+          type: 'success'
+        })
+      }
+      sessionStorage.removeItem('elang_search')
     }
   }
 
@@ -201,26 +309,50 @@ export default function ElangPage() {
       }
 
       setSavedCount(data.count)
+      setToast({
+        message: `${data.count} produk berhasil disimpan!`,
+        type: 'success'
+      })
       setTimeout(() => {
         setSavedCount(0)
         setSelectedProducts([])
         setResults([])
       }, 3000)
     } catch (err: any) {
-      setError(err.message || 'Failed to save products')
+      setToast({
+        message: err.message || 'Gagal menyimpan produk',
+        type: 'error'
+      })
     } finally {
       setIsSaving(false)
     }
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !isSearching && searchQuery.trim()) {
+    if (e.key === 'Enter' && !isSearching) {
       handleSearch()
     }
   }
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
+      {/* Background Search Indicator */}
+      {backgroundSearch && backgroundSearch.status === 'running' && (
+        <BackgroundSearchIndicator
+          query={backgroundSearch.query}
+          onClick={handleBackgroundSearchClick}
+        />
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-4 mb-4">
@@ -277,7 +409,7 @@ export default function ElangPage() {
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     disabled={isSearching}
                   >
-                    <AlertCircle className="w-5 h-5" />
+                    <X className="w-5 h-5" />
                   </button>
                 )}
               </div>
@@ -354,7 +486,7 @@ export default function ElangPage() {
               {isSearching ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Elang Sedang Berburu...
+                  Elang Sedang Berburu... (Bisa Navegasi ke Menu Lain)
                 </>
               ) : (
                 <>
@@ -363,6 +495,13 @@ export default function ElangPage() {
                 </>
               )}
             </Button>
+
+            {isSearching && (
+              <p className="text-xs text-center text-gray-500 flex items-center justify-center gap-2">
+                <Bell className="w-4 h-4" />
+                Elang tetap berjalan di background. Kamu bisa navigasi ke menu lain!
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -634,10 +773,3 @@ export default function ElangPage() {
     </div>
   )
 }
-
-// Real steps that actually happen
-const searchSteps = [
-  { id: 'browse', label: 'Browsing internet untuk data real-time', icon: Globe },
-  { id: 'analyze', label: 'Menganalisis trending products', icon: Zap },
-  { id: 'compile', label: 'Menyusun hasil riset', icon: FileText },
-]
