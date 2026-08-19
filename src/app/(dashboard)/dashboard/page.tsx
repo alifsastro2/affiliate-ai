@@ -17,6 +17,13 @@ import {
   BarChart3,
   CheckCircle2,
   Clock,
+  Activity,
+  Rocket,
+  FileText,
+  Users,
+  TrendingUp as TrendUp,
+  DollarSign,
+  Sparkles,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -36,8 +43,11 @@ const agents = [
   {
     name: 'Elang',
     role: 'Research Agent',
-    emoji: '🦅',
+    icon: Search,
     color: 'sky',
+    colorClass: 'from-sky-400 to-sky-600',
+    bgClass: 'bg-sky-100',
+    iconClass: 'text-sky-600',
     description: 'Cari produk trending',
     status: 'ready',
     href: '/elang',
@@ -45,8 +55,11 @@ const agents = [
   {
     name: 'Merak',
     role: 'Content Agent',
-    emoji: '🦚',
+    icon: Palette,
     color: 'purple',
+    colorClass: 'from-purple-400 to-purple-600',
+    bgClass: 'bg-purple-100',
+    iconClass: 'text-purple-600',
     description: 'Generate bahan video',
     status: 'ready',
     href: '/merak',
@@ -54,8 +67,11 @@ const agents = [
   {
     name: 'Semut',
     role: 'Analytics Agent',
-    emoji: '🐜',
+    icon: BarChart3,
     color: 'amber',
+    colorClass: 'from-amber-400 to-amber-600',
+    bgClass: 'bg-amber-100',
+    iconClass: 'text-amber-600',
     description: 'Analisis performa',
     status: 'idle',
     href: '/semut',
@@ -63,8 +79,11 @@ const agents = [
   {
     name: 'Unta',
     role: 'Budget Agent',
-    emoji: '🐪',
+    icon: Wallet,
     color: 'green',
+    colorClass: 'from-green-400 to-green-600',
+    bgClass: 'bg-green-100',
+    iconClass: 'text-green-600',
     description: 'Pantau biaya AI',
     status: 'ready',
     href: '/unta',
@@ -74,42 +93,54 @@ const agents = [
 const recentActivities = [
   {
     agent: 'Elang',
-    emoji: '🦅',
+    icon: Search,
+    bgClass: 'bg-sky-100',
+    iconClass: 'text-sky-600',
     title: 'Menemukan 12 produk trending di niche "Rumah Tangga"',
     time: '5 menit lalu',
     type: 'research',
   },
   {
     agent: 'Merak',
-    emoji: '🦚',
+    icon: Palette,
+    bgClass: 'bg-purple-100',
+    iconClass: 'text-purple-600',
     title: 'Generate 5 script untuk "Rak Bumbu Magnet"',
     time: '15 menit lalu',
     type: 'content',
   },
   {
     agent: 'System',
-    emoji: '✅',
+    icon: CheckCircle2,
+    bgClass: 'bg-green-100',
+    iconClass: 'text-green-600',
     title: 'Approve script #12 untuk posting',
     time: '1 jam lalu',
     type: 'approval',
   },
   {
     agent: 'System',
-    emoji: '📱',
+    icon: Rocket,
+    bgClass: 'bg-orange-100',
+    iconClass: 'text-orange-600',
     title: 'Posting TikTok "Before/After Dapur" berhasil',
     time: '2 jam lalu',
     type: 'posting',
   },
   {
     agent: 'Semut',
-    emoji: '🐜',
+    icon: Activity,
+    bgClass: 'bg-amber-100',
+    iconClass: 'text-amber-600',
     title: 'Analisis: Before/After content paling perform',
     time: '3 jam lalu',
     type: 'insight',
   },
   {
     agent: 'Unta',
-    emoji: '🐪',
+    icon: DollarSign,
+    bgClass: 'bg-green-100',
+    iconClass: 'text-green-600',
     title: 'Komisi masuk Rp 85.000 dari video yesterday',
     time: '5 jam lalu',
     type: 'commission',
@@ -121,11 +152,17 @@ export default function Dashboard() {
     <div className="p-6 max-w-7xl mx-auto">
       {/* Welcome Section */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">
-          👋 Halo, Alif Zidane!
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center">
+            <Users className="w-5 h-5 text-white" />
+          </div>
+          Halo, Alif Zidane!
         </h1>
-        <p className="text-gray-500 mt-1">
-          Selamat datang di Command Center affiliate-mu. AI Bikin Cuan, Santai Saja! 🚀
+        <p className="text-gray-500 mt-2 flex items-center gap-2">
+          Selamat datang di Command Center affiliate-mu.
+          <span className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-2 py-0.5 rounded-full text-sm font-medium">
+            AI Bikin Cuan, Santai Saja!
+          </span>
         </p>
       </div>
 
@@ -224,7 +261,8 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  🤖 AI Agents Status
+                  <Sparkles className="w-5 h-5 text-orange-500" />
+                  AI Agents Status
                 </h2>
                 <p className="text-sm text-gray-500 mt-1">
                   Tim AI agents yang siap membantu bisnismu
@@ -234,45 +272,50 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {agents.map((agent) => (
-                <Link
-                  key={agent.name}
-                  href={agent.href}
-                  className="group p-4 border border-gray-200 rounded-xl hover:border-orange-300 hover:bg-orange-50/50 transition-all"
-                >
-                  <div className="flex items-center gap-3 mb-3">
-                    <span className="text-3xl">{agent.emoji}</span>
-                    <div>
-                      <h3 className="font-semibold text-gray-900 group-hover:text-orange-600 transition-colors">
-                        {agent.name}
-                      </h3>
-                      <p className="text-xs text-gray-500">{agent.role}</p>
+              {agents.map((agent) => {
+                const Icon = agent.icon
+                return (
+                  <Link
+                    key={agent.name}
+                    href={agent.href}
+                    className="group p-4 border border-gray-200 rounded-xl hover:border-orange-300 hover:bg-orange-50/50 transition-all"
+                  >
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className={`w-10 h-10 bg-gradient-to-br ${agent.colorClass} rounded-xl flex items-center justify-center`}>
+                        <Icon className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900 group-hover:text-orange-600 transition-colors">
+                          {agent.name}
+                        </h3>
+                        <p className="text-xs text-gray-500">{agent.role}</p>
+                      </div>
                     </div>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-3">
-                    {agent.description}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <Badge
-                      variant={agent.status === 'ready' ? 'success' : 'warning'}
-                      size="sm"
-                    >
-                      {agent.status === 'ready' ? (
-                        <>
-                          <CheckCircle2 className="w-3 h-3 mr-1" />
-                          Ready
-                        </>
-                      ) : (
-                        <>
-                          <Clock className="w-3 h-3 mr-1" />
-                          Idle
-                        </>
-                      )}
-                    </Badge>
-                    <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-orange-500 transition-colors" />
-                  </div>
-                </Link>
-              ))}
+                    <p className="text-sm text-gray-600 mb-3">
+                      {agent.description}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <Badge
+                        variant={agent.status === 'ready' ? 'success' : 'warning'}
+                        size="sm"
+                      >
+                        {agent.status === 'ready' ? (
+                          <>
+                            <CheckCircle2 className="w-3 h-3 mr-1" />
+                            Ready
+                          </>
+                        ) : (
+                          <>
+                            <Clock className="w-3 h-3 mr-1" />
+                            Idle
+                          </>
+                        )}
+                      </Badge>
+                      <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-orange-500 transition-colors" />
+                    </div>
+                  </Link>
+                )
+              })}
             </div>
           </CardContent>
         </Card>
@@ -280,8 +323,9 @@ export default function Dashboard() {
         {/* Quick Actions Card */}
         <Card>
           <CardHeader>
-            <h2 className="text-lg font-semibold text-gray-900">
-              ⚡ Quick Actions
+            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-orange-500" />
+              Quick Actions
             </h2>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -289,6 +333,12 @@ export default function Dashboard() {
               <Button className="w-full justify-start" variant="outline">
                 <Search className="w-4 h-4 mr-2" />
                 Cari Produk Trending
+              </Button>
+            </Link>
+            <Link href="/produk">
+              <Button className="w-full justify-start" variant="outline">
+                <FileText className="w-4 h-4 mr-2" />
+                Kelola Produk Saya
               </Button>
             </Link>
             <Link href="/merak">
@@ -312,8 +362,9 @@ export default function Dashboard() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">
-                📋 Aktivitas Terakhir
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Activity className="w-5 h-5 text-orange-500" />
+                Aktivitas Terakhir
               </h2>
               <p className="text-sm text-gray-500 mt-1">
                 Update terbaru dari aktivitas bisnismu
@@ -323,20 +374,25 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {recentActivities.map((activity, index) => (
-              <div
-                key={index}
-                className="flex items-start gap-4 pb-4 border-b border-gray-100 last:border-0 last:pb-0"
-              >
-                <div className="text-2xl">{activity.emoji}</div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-900">{activity.title}</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {activity.time}
-                  </p>
+            {recentActivities.map((activity, index) => {
+              const Icon = activity.icon
+              return (
+                <div
+                  key={index}
+                  className="flex items-start gap-4 pb-4 border-b border-gray-100 last:border-0 last:pb-0"
+                >
+                  <div className={`w-10 h-10 ${activity.bgClass} rounded-xl flex items-center justify-center flex-shrink-0`}>
+                    <Icon className={`w-5 h-5 ${activity.iconClass}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-900">{activity.title}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {activity.time}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </CardContent>
       </Card>

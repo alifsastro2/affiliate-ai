@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { Input } from '@/components/ui/Input'
 import { supabase } from '@/lib/supabase/client'
+import { showToast } from '@/components/layout/GlobalComponents'
 import {
   Package,
   Plus,
@@ -19,8 +19,8 @@ import {
   Link,
   DollarSign,
   Tag,
-  Image,
   X,
+  Image as ImageIcon,
 } from 'lucide-react'
 
 interface Product {
@@ -141,7 +141,6 @@ export default function ProdukPage() {
     setIsSaving(true)
     try {
       if (editingProduct) {
-        // Update existing
         const { error } = await supabase
           .from('products')
           .update({
@@ -157,8 +156,8 @@ export default function ProdukPage() {
           .eq('id', editingProduct.id)
 
         if (error) throw error
+        showToast('Produk berhasil diupdate!', 'success')
       } else {
-        // Insert new
         const { error } = await supabase.from('products').insert({
           user_id: user.id,
           name: formData.name,
@@ -172,12 +171,14 @@ export default function ProdukPage() {
         })
 
         if (error) throw error
+        showToast('Produk berhasil ditambahkan!', 'success')
       }
 
       setShowModal(false)
       fetchProducts()
     } catch (err) {
       console.error('Error saving product:', err)
+      showToast('Gagal menyimpan produk', 'error')
     } finally {
       setIsSaving(false)
     }
@@ -187,6 +188,7 @@ export default function ProdukPage() {
     const { error } = await supabase.from('products').delete().eq('id', id)
     if (!error) {
       setProducts(products.filter(p => p.id !== id))
+      showToast('Produk berhasil dihapus!', 'success')
     }
     setDeleteConfirm(null)
   }
@@ -335,7 +337,7 @@ export default function ProdukPage() {
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <Image className="w-8 h-8 text-gray-300" />
+                        <ImageIcon className="w-8 h-8 text-gray-300" />
                       </div>
                     )}
                   </div>

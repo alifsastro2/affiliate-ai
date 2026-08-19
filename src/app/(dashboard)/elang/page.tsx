@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { Input } from '@/components/ui/Input'
 import { cn, getDifficultyColor, getScoreColor } from '@/lib/utils'
 import {
   Search,
@@ -19,25 +18,12 @@ import {
   TrendingUp,
   Save,
   Sparkles,
-  Bell,
   X,
+  Bell,
 } from 'lucide-react'
 import { TrendingProduct } from '@/lib/types'
 import { supabase } from '@/lib/supabase/client'
-
-// Popular search suggestions
-const suggestions = [
-  'kacamata vintage',
-  'tas wanita import',
-  'skincare Korea',
-  'gadget murah',
-  'sepato running',
-  'perlengkapan bayi',
-  'dress wanita',
-  'smartwatch fitness',
-  'sprei motif',
-  'tumbler minuman',
-]
+import { showToast } from '@/components/layout/GlobalComponents'
 
 // Search steps
 const searchSteps = [
@@ -46,39 +32,19 @@ const searchSteps = [
   { id: 'compile', label: 'Menyusun hasil riset', icon: FileText },
 ]
 
-// Toast notification component
-function Toast({ message, type, onClose }: { message: string; type: 'success' | 'error' | 'info'; onClose: () => void }) {
-  return (
-    <div className={cn(
-      "fixed bottom-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg animate-slide-up",
-      type === 'success' && "bg-green-500 text-white",
-      type === 'error' && "bg-red-500 text-white",
-      type === 'info' && "bg-blue-500 text-white",
-    )}>
-      {type === 'success' && <CheckCircle2 className="w-5 h-5" />}
-      {type === 'error' && <AlertCircle className="w-5 h-5" />}
-      {type === 'info' && <Loader2 className="w-5 h-5 animate-spin" />}
-      <span className="font-medium">{message}</span>
-      <button onClick={onClose} className="ml-2 hover:opacity-80">
-        <X className="w-4 h-4" />
-      </button>
-    </div>
-  )
-}
-
-// Background search indicator
-function BackgroundSearchIndicator({ query, onClick }: { query: string; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 bg-sky-500 text-white rounded-full shadow-lg hover:bg-sky-600 transition-colors animate-pulse"
-    >
-      <Loader2 className="w-4 h-4 animate-spin" />
-      <span className="text-sm font-medium">Elang hunting: {query}</span>
-      <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs">Click untuk lihat</span>
-    </button>
-  )
-}
+// Popular search suggestions
+const suggestions = [
+  'kacamata vintage',
+  'tas wanita import',
+  'skincare Korea',
+  'gadget murah',
+  'sepatu running',
+  'perlengkapan bayi',
+  'dress wanita',
+  'smartwatch fitness',
+  'sprei motif',
+  'tumbler minuman',
+]
 
 export default function ElangPage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -95,8 +61,6 @@ export default function ElangPage() {
   const [savedCount, setSavedCount] = useState(0)
   const [user, setUser] = useState<any>(null)
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
-  const [backgroundSearch, setBackgroundSearch] = useState<{ query: string; status: 'running' | 'done' } | null>(null)
 
   // Get current user
   useEffect(() => {
@@ -111,24 +75,19 @@ export default function ElangPage() {
     if (stored) {
       const data = JSON.parse(stored)
       if (data.status === 'done') {
-        // Search completed while away
-        setBackgroundSearch({ query: data.query, status: 'done' })
         if (data.results && data.results.length > 0) {
           setResults(data.results)
-          setToast({
-            message: `Elang selesai! Ditemukan ${data.results.length} produk trending untuk "${data.query}"`,
-            type: 'success'
-          })
+          showToast(`Elang selesai! Ditemukan ${data.results.length} produk trending untuk "${data.query}"`, 'success')
         } else if (data.error) {
           setError(data.error)
-          setToast({ message: data.error, type: 'error' })
+          showToast(data.error, 'error')
         }
         sessionStorage.removeItem('elang_search')
       }
     }
   }, [])
 
-  // Filter suggestions based on input
+  // Filter suggestions
   const filteredSuggestions = suggestions.filter(s =>
     s.toLowerCase().includes(searchQuery.toLowerCase())
   )
@@ -145,13 +104,12 @@ export default function ElangPage() {
 
     const query = searchQuery.trim() || 'semua produk trending di Indonesia'
 
-    // Store search state in sessionStorage for persistence across navigation
+    // Store search state
     sessionStorage.setItem('elang_search', JSON.stringify({
       query,
       status: 'running',
       startTime: Date.now()
     }))
-    setBackgroundSearch({ query, status: 'running' })
 
     const stepProgress = [30, 60, 90]
     let stepIndex = 0
@@ -218,14 +176,13 @@ export default function ElangPage() {
           setResults(data.products || [])
           success = true
 
-          // Store results for when user returns
+          // Store results
           sessionStorage.setItem('elang_search', JSON.stringify({
             query,
             status: 'done',
             results: data.products || [],
             completedAt: Date.now()
           }))
-          setBackgroundSearch({ query, status: 'done' })
 
         } catch (err: any) {
           lastError = err.message || 'Unknown error'
@@ -250,28 +207,10 @@ export default function ElangPage() {
         error: errorMsg,
         completedAt: Date.now()
       }))
-      setBackgroundSearch({ query, status: 'done' })
     } finally {
       clearInterval(progressInterval)
       setIsSearching(false)
       setRetryCount(0)
-    }
-  }
-
-  const handleBackgroundSearchClick = () => {
-    // Clear background indicator and show results if available
-    setBackgroundSearch(null)
-    const stored = sessionStorage.getItem('elang_search')
-    if (stored) {
-      const data = JSON.parse(stored)
-      if (data.results) {
-        setResults(data.results)
-        setToast({
-          message: `Ditemukan ${data.results.length} produk!`,
-          type: 'success'
-        })
-      }
-      sessionStorage.removeItem('elang_search')
     }
   }
 
@@ -309,20 +248,14 @@ export default function ElangPage() {
       }
 
       setSavedCount(data.count)
-      setToast({
-        message: `${data.count} produk berhasil disimpan!`,
-        type: 'success'
-      })
+      showToast(`${data.count} produk berhasil disimpan!`, 'success')
       setTimeout(() => {
         setSavedCount(0)
         setSelectedProducts([])
         setResults([])
       }, 3000)
     } catch (err: any) {
-      setToast({
-        message: err.message || 'Gagal menyimpan produk',
-        type: 'error'
-      })
+      showToast(err.message || 'Gagal menyimpan produk', 'error')
     } finally {
       setIsSaving(false)
     }
@@ -336,23 +269,6 @@ export default function ElangPage() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* Background Search Indicator */}
-      {backgroundSearch && backgroundSearch.status === 'running' && (
-        <BackgroundSearchIndicator
-          query={backgroundSearch.query}
-          onClick={handleBackgroundSearchClick}
-        />
-      )}
-
-      {/* Toast Notification */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
-
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-4 mb-4">
@@ -486,7 +402,7 @@ export default function ElangPage() {
               {isSearching ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Elang Sedang Berburu... (Bisa Navegasi ke Menu Lain)
+                  Elang Sedang Berburu... (Bisa Navigasi ke Menu Lain)
                 </>
               ) : (
                 <>
@@ -511,7 +427,7 @@ export default function ElangPage() {
         <Card className="mb-6">
           <CardContent className="py-8">
             <div className="text-center mb-6">
-              <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-sky-400 to-sky-600 rounded-2xl flex items-center justify-center shadow-lg animate-pulse">
+              <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-sky-400 to-sky-600 rounded-2xl flex items-center justify-center shadow-lg">
                 <Search className="w-10 h-10 text-white" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -547,9 +463,9 @@ export default function ElangPage() {
               </p>
             </div>
 
-            {/* Real Steps */}
+            {/* Steps */}
             <div className="max-w-md mx-auto space-y-3">
-              {searchSteps.map((step, index) => {
+              {searchSteps.map((step) => {
                 const isCompleted = completedSteps.includes(step.id)
                 const isActive = currentStep === step.id
                 const Icon = step.icon
@@ -562,7 +478,7 @@ export default function ElangPage() {
                       </div>
                     ) : isActive ? (
                       <div className="w-8 h-8 rounded-full bg-sky-100 flex items-center justify-center">
-                        <Icon className="w-5 h-5 text-sky-500 animate-pulse" />
+                        <Icon className="w-5 h-5 text-sky-500" style={{ animation: 'pulse 1s infinite' }} />
                       </div>
                     ) : (
                       <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">

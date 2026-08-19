@@ -1,0 +1,100 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { cn } from '@/lib/utils'
+import { Loader2, X } from 'lucide-react'
+import { supabase } from '@/lib/supabase/client'
+
+// Global search indicator - persists across all pages
+export function GlobalSearchIndicator() {
+  const [isSearching, setIsSearching] = useState(false)
+  const [query, setQuery] = useState('')
+  const router = useRouter()
+
+  useEffect(() => {
+    const checkSearch = () => {
+      const stored = sessionStorage.getItem('elang_search')
+      if (stored) {
+        const data = JSON.parse(stored)
+        setIsSearching(data.status === 'running')
+        setQuery(data.query || '')
+      } else {
+        setIsSearching(false)
+        setQuery('')
+      }
+    }
+
+    checkSearch()
+    const interval = setInterval(checkSearch, 500)
+    const handleStorage = () => checkSearch()
+    window.addEventListener('storage', handleStorage)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('storage', handleStorage)
+    }
+  }, [])
+
+  if (!isSearching) return null
+
+  return (
+    <button
+      onClick={() => router.push('/elang')}
+      className="fixed top-4 right-20 z-50 flex items-center gap-2 px-4 py-2 bg-sky-500 text-white rounded-full shadow-lg hover:bg-sky-600 transition-all"
+      style={{ animation: 'pulse 2s infinite' }}
+    >
+      <Loader2 className="w-4 h-4 animate-spin" />
+      <span className="text-sm font-medium">Elang hunting: {query}</span>
+    </button>
+  )
+}
+
+// Toast notification - persists across all pages
+export function ToastNotification() {
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
+
+  useEffect(() => {
+    const handleToast = (event: CustomEvent) => {
+      setToast(event.detail)
+      setTimeout(() => setToast(null), 5000)
+    }
+
+    window.addEventListener('showToast', handleToast as EventListener)
+    return () => window.removeEventListener('showToast', handleToast as EventListener)
+  }, [])
+
+  if (!toast) return null
+
+  return (
+    <div className={cn(
+      "fixed bottom-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg animate-slide-up",
+      toast.type === 'success' && "bg-green-500 text-white",
+      toast.type === 'error' && "bg-red-500 text-white",
+      toast.type === 'info' && "bg-blue-500 text-white",
+    )}>
+      {toast.type === 'success' && (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+      )}
+      {toast.type === 'error' && (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      )}
+      {toast.type === 'info' && <Loader2 className="w-5 h-5 animate-spin" />}
+      <span className="font-medium">{toast.message}</span>
+      <button onClick={() => setToast(null)} className="ml-2 hover:opacity-80">
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  )
+}
+
+// Helper function to show toast from anywhere
+export function showToast(message: string, type: 'success' | 'error' | 'info' = 'info') {
+  window.dispatchEvent(new CustomEvent('showToast', {
+    detail: { message, type }
+  }))
+}

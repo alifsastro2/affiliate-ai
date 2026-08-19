@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard,
@@ -16,19 +16,22 @@ import {
   ChevronRight,
   Zap,
   Package,
+  Loader2,
+  X,
 } from 'lucide-react'
 import { UserButton } from '@/components/auth/UserButton'
 import { AuthForm } from '@/components/auth/AuthForm'
 import { supabase } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Pipeline', href: '/pipeline', icon: GitBranch, badge: 'Progress' },
-  { name: 'Elang', href: '/elang', icon: Search, badge: 'Research' },
-  { name: 'Produk', href: '/produk', icon: Package, badge: 'Saya' },
-  { name: 'Merak', href: '/merak', icon: Palette, badge: 'Content' },
-  { name: 'Semut', href: '/semut', icon: BarChart3, badge: 'Analytics' },
-  { name: 'Unta', href: '/unta', icon: Wallet, badge: 'Budget' },
+  { name: 'Pipeline', href: '/pipeline', icon: GitBranch },
+  { name: 'Elang', href: '/elang', icon: Search },
+  { name: 'Produk', href: '/produk', icon: Package },
+  { name: 'Merak', href: '/merak', icon: Palette },
+  { name: 'Semut', href: '/semut', icon: BarChart3 },
+  { name: 'Unta', href: '/unta', icon: Wallet },
 ]
 
 const publicRoutes = ['/login', '/']
@@ -40,7 +43,6 @@ export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
 
-  // Check auth status
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -55,28 +57,22 @@ export function Sidebar() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // Redirect to dashboard if not authenticated on protected routes
   useEffect(() => {
     if (isAuthenticated === false && !publicRoutes.includes(pathname)) {
       router.push('/login')
     }
   }, [isAuthenticated, pathname, router])
 
-  // Show loading state
   if (isAuthenticated === null) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 animate-pulse">
-            ⚡
-          </div>
-          <p className="text-gray-500">Loading...</p>
+        <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center animate-pulse">
+          <Zap className="w-8 h-8 text-white" />
         </div>
       </div>
     )
   }
 
-  // Show auth form if not authenticated
   if (!isAuthenticated) {
     if (showAuth || !publicRoutes.includes(pathname)) {
       return <AuthForm />
@@ -140,28 +136,12 @@ export function Sidebar() {
                 )} />
 
                 {!isCollapsed && (
-                  <>
-                    <span className="font-medium">{item.name}</span>
-                    {item.badge && (
-                      <span className={cn(
-                        "ml-auto text-xs px-2 py-0.5 rounded-full",
-                        item.name === 'Pipeline' && "bg-orange-100 text-orange-600",
-                        item.name === 'Elang' && "bg-sky-100 text-sky-600",
-                        item.name === 'Produk' && "bg-purple-100 text-purple-600",
-                        item.name === 'Merak' && "bg-purple-100 text-purple-600",
-                        item.name === 'Semut' && "bg-amber-100 text-amber-600",
-                        item.name === 'Unta' && "bg-green-100 text-green-600",
-                      )}>
-                        {item.badge}
-                      </span>
-                    )}
-                  </>
+                  <span className="font-medium">{item.name}</span>
                 )}
 
                 {isCollapsed && (
                   <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-sm rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
                     {item.name}
-                    {item.badge && <span className="ml-2 text-gray-400">({item.badge})</span>}
                   </div>
                 )}
               </Link>
@@ -188,5 +168,96 @@ export function Sidebar() {
         <UserButton onAuthRequired={() => setShowAuth(true)} />
       </div>
     </>
+  )
+}
+
+// Global search indicator component - persists across all pages
+export function GlobalSearchIndicator() {
+  const [isSearching, setIsSearching] = useState(false)
+  const [query, setQuery] = useState('')
+  const router = useRouter()
+
+  useEffect(() => {
+    // Check for active search in sessionStorage
+    const checkSearch = () => {
+      const stored = sessionStorage.getItem('elang_search')
+      if (stored) {
+        const data = JSON.parse(stored)
+        setIsSearching(data.status === 'running')
+        setQuery(data.query || '')
+      } else {
+        setIsSearching(false)
+        setQuery('')
+      }
+    }
+
+    // Check on mount
+    checkSearch()
+
+    // Check periodically (every 500ms) for changes
+    const interval = setInterval(checkSearch, 500)
+
+    // Also listen for storage events (when another tab/window changes it)
+    const handleStorage = () => checkSearch()
+    window.addEventListener('storage', handleStorage)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('storage', handleStorage)
+    }
+  }, [])
+
+  if (!isSearching) return null
+
+  return (
+    <button
+      onClick={() => router.push('/elang')}
+      className="fixed top-4 right-20 z-50 flex items-center gap-2 px-4 py-2 bg-sky-500 text-white rounded-full shadow-lg hover:bg-sky-600 transition-all animate-pulse"
+    >
+      <Loader2 className="w-4 h-4 animate-spin" />
+      <span className="text-sm font-medium">Elang hunting: {query}</span>
+    </button>
+  )
+}
+
+// Toast notification component
+export function ToastNotification() {
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
+
+  useEffect(() => {
+    const handleToast = (event: CustomEvent) => {
+      setToast(event.detail)
+      setTimeout(() => setToast(null), 5000)
+    }
+
+    window.addEventListener('showToast', handleToast as EventListener)
+    return () => window.removeEventListener('showToast', handleToast as EventListener)
+  }, [])
+
+  if (!toast) return null
+
+  return (
+    <div className={cn(
+      "fixed bottom-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg animate-slide-up",
+      toast.type === 'success' && "bg-green-500 text-white",
+      toast.type === 'error' && "bg-red-500 text-white",
+      toast.type === 'info' && "bg-blue-500 text-white",
+    )}>
+      {toast.type === 'success' && (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+      )}
+      {toast.type === 'error' && (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      )}
+      {toast.type === 'info' && <Loader2 className="w-5 h-5 animate-spin" />}
+      <span className="font-medium">{toast.message}</span>
+      <button onClick={() => setToast(null)} className="ml-2 hover:opacity-80">
+        <X className="w-4 h-4" />
+      </button>
+    </div>
   )
 }
