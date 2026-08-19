@@ -9,14 +9,13 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <div style={{ backgroundColor: 'red', minHeight: '100vh', margin: '0 !important', padding: '0 !important' }}>
+    <div>
+      {/* Sidebar fixed */}
       <Sidebar />
 
-      {/* Blue with important styles */}
-      <div style={{ backgroundColor: 'blue', margin: '0 !important', padding: '0 !important', marginLeft: '288px !important', width: 'calc(100% - 288px) !important', minHeight: '100vh !important' }}>
-        <div style={{ padding: '24px !important' }}>
-          {children}
-        </div>
+      {/* Content - position absolute, left matches sidebar width */}
+      <div style={{ position: 'absolute', left: '288px', top: 0, right: 0, bottom: 0, backgroundColor: 'blue', padding: '24px', overflow: 'auto' }}>
+        {children}
       </div>
 
       <GlobalSearchIndicator />
