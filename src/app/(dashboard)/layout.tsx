@@ -13,12 +13,12 @@ export default function DashboardLayout({
       {/* Sidebar */}
       <Sidebar />
 
-      {/* Main Content - starts right after sidebar (w-72 = 288px = pl-72) */}
+      {/* Main Content */}
       <main className="pl-72 min-h-screen">
         {children}
       </main>
 
-      {/* Global Components - Persist across all pages */}
+      {/* Global Components */}
       <GlobalSearchIndicator />
       <ToastNotification />
     </div>

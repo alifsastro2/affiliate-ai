@@ -83,31 +83,33 @@ export function Sidebar() {
     <>
       <aside
         className={cn(
-          "fixed left-0 top-0 z-40 h-screen bg-white border-r border-gray-200 transition-all duration-300",
+          "fixed left-0 top-0 z-50 h-screen bg-white border-r border-gray-200 transition-all duration-200 ease-out",
           isCollapsed ? "w-20" : "w-72"
         )}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-100">
-          {!isCollapsed && (
-            <Link href="/dashboard" className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-md">
+        <div className="h-16 flex items-center justify-between px-3 border-b border-gray-100">
+          {!isCollapsed ? (
+            <Link href="/dashboard" className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
                 <Zap className="w-5 h-5 text-white" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <h1 className="font-bold text-gray-900 text-lg">Cuan</h1>
                 <p className="text-xs text-gray-500">Affiliate AI</p>
               </div>
             </Link>
-          )}
-          {isCollapsed && (
-            <Link href="/dashboard" className="w-10 h-10 mx-auto bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-md">
+          ) : (
+            <Link href="/dashboard" className="w-10 h-10 mx-auto bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
               <Zap className="w-5 h-5 text-white" />
             </Link>
           )}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+            className={cn(
+              "p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors flex-shrink-0 z-50",
+              isCollapsed && "mx-auto"
+            )}
           >
             {isCollapsed ? (
               <ChevronRight className="w-5 h-5" />
