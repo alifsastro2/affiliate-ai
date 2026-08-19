@@ -9,16 +9,17 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Sidebar */}
+    <div style={{ backgroundColor: 'red', minHeight: '100vh' }}>
       <Sidebar />
 
-      {/* Main Content */}
-      <div className="ml-[288px] p-6">
-        {children}
+      {/* DEBUG: Blue background */}
+      <div style={{ backgroundColor: 'blue', marginLeft: '288px' }}>
+        {/* DEBUG: Green background */}
+        <div style={{ backgroundColor: 'green', padding: '24px' }}>
+          {children}
+        </div>
       </div>
 
-      {/* Global Components */}
       <GlobalSearchIndicator />
       <ToastNotification />
     </div>
