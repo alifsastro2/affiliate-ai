@@ -24,23 +24,23 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50" style={{ margin: 0, padding: 0 }}>
       {/* Sidebar - fixed at left, width 288px */}
       <Sidebar />
 
-      {/* Main Content - starts at where sidebar ends */}
+      {/* Main Content - padding-left matches sidebar width */}
       <main
         id="main-content"
         className="border-l-4 border-red-500"
         style={{
-          position: 'relative',
-          marginLeft: '250px',
-          paddingLeft: '0px',
+          margin: 0,
+          paddingLeft: '288px',
+          paddingRight: '24px',
+          paddingTop: '24px',
+          paddingBottom: '24px',
         }}
       >
-        <div style={{ padding: '24px' }}>
-          {children}
-        </div>
+        {children}
       </main>
 
       {/* Global Components */}
